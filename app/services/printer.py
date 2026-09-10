@@ -38,18 +38,17 @@ def available_printers():
     return [info.printerName() for info in QPrinterInfo.availablePrinters()]
 
 
-def _configure_receipt_page(printer, paper):
+def _configure_receipt_page(printer, paper, height_mm=200.0):
     """Apply a thermal-friendly physical page size and safe print margins."""
     profile = _profile(paper)
     width = profile["paper_width_mm"]
 
-    # PySide6 exposes the size constructor through QSizeF rather than
-    # QPageSize.SizeF. This is compatible with current Qt 6 bindings.
+    # Use QSizeF directly. The optional match policy is intentionally omitted
+    # for compatibility across installed PySide6/Qt 6 versions.
     page_size = QPageSize(
-        QSizeF(width, 200.0),
+        QSizeF(width, height_mm),
         QPageSize.Millimeter,
         f"WPOS {paper} Receipt",
-        QPageSize.ExactSize,
     )
     layout = QPageLayout(
         page_size,
@@ -142,7 +141,8 @@ def print_receipt(parent, sale, items):
 
 def test_print(parent, printer_name="", paper="80mm"):
     printer = QPrinter(QPrinter.HighResolution)
-    _configure_receipt_page(printer, paper)
+    # A printer test should produce a short physical slip, not a full 200 mm page.
+    _configure_receipt_page(printer, paper, height_mm=60.0)
     if printer_name:
         printer.setPrinterName(printer_name)
     dialog = QPrintDialog(printer, parent)
