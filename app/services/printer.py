@@ -18,7 +18,7 @@ RECEIPT_PROFILE = {
     "margin_mm": 5.0,
     "font_size_pt": 9,
     "cpl_hint": 32,
-    "bottom_feed_lines": 6,
+    "bottom_feed_lines": 30,
 }
 
 ESC = b"\x1b"
@@ -28,7 +28,9 @@ CMD_ALIGN_LEFT = ESC + b"a\x00"
 CMD_ALIGN_CENTER = ESC + b"a\x01"
 CMD_BOLD_ON = ESC + b"E\x01"
 CMD_BOLD_OFF = ESC + b"E\x00"
-CMD_CUT = GS + b"V\x00"
+# GS V 65 n: feed to the cutter position plus n motion units, then full cut.
+# This lets the printer perform the feed and cutter movement as one operation.
+CMD_CUT_WITH_FEED = GS + b"V" + bytes([65, 30])
 
 
 def available_printers():
@@ -182,9 +184,9 @@ def _escpos_receipt_bytes(store_name, address, phone, invoice_no, created_at, it
     out += CMD_ALIGN_CENTER
     for line in _fit_line(footer, width):
         out += _escpos_line(line)
-    # Give a comfortable lower margin before cutting. Six normal feed lines
-    # provide roughly 7-12 mm depending on the printer's configured line pitch.
-    out += CMD_ALIGN_LEFT + ESC + b"d" + bytes([RECEIPT_PROFILE["bottom_feed_lines"]]) + CMD_CUT
+    # Use the ESC/POS feed-and-cut command so the printer controls the
+    # movement to the cutter position and the cut as one operation.
+    out += CMD_CUT_WITH_FEED
     return bytes(out)
 
 
