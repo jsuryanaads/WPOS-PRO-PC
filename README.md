@@ -1,4 +1,4 @@
-# WPOS PRO V1.1.1
+# WPOS PRO V1.1.5
 
 Modern POS 2026 untuk toko sembako Windows offline, satu komputer.
 
@@ -44,8 +44,8 @@ Barcode → Keranjang → Diskon → Pembayaran → Kembalian → Stok berkurang
 ## Versioning
 - Perubahan kecil: patch version.
 - Perubahan menengah: naik ke target minor patch sesuai aturan proyek.
-- Perubahan besar: naik ke versi minor baru, contoh V1.0.1 → V1.1.1.
-- Redesign UI/UX Modern POS 2026 ditetapkan sebagai perubahan besar dan ditargetkan pada V1.1.1.
+- Perubahan besar: naik ke versi minor baru.
+- V1.1.5 adalah milestone stabilisasi dan packaging setelah audit source, UI/navigation, database refresh, role consistency, edge cases, dan CI.
 
 ## Default login
 - Username: `admin`
@@ -73,4 +73,4 @@ Jalankan `build.bat` pada Windows dengan Python dan PyInstaller terpasang.
 Compile `installer.iss` menggunakan Inno Setup setelah EXE berhasil dibuat.
 
 ## Status
-WPOS PRO V1.1.1 adalah target pengembangan Modern POS 2026. Setiap fitur dianggap selesai setelah terintegrasi, diuji, dan diaudit.
+WPOS PRO V1.1.5 adalah kandidat build setelah CI PASS. Packaging EXE/Installer harus berasal dari source yang sudah diaudit dan lulus CI.
