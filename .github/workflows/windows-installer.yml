@@ -63,14 +63,14 @@ jobs:
       - name: Verify installer
         shell: pwsh
         run: |
-          $setup = "installer\WPOS_PRO_V1.0_Setup.exe"
+          $setup = "installer\WPOS_PRO_V1.1.1_Setup.exe"
           if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
           Get-Item $setup | Format-List FullName,Length
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: WPOS-PRO-V1.0-Installer
-          path: installer/WPOS_PRO_V1.0_Setup.exe
+          name: WPOS-PRO-V1.1.1-Installer
+          path: installer/WPOS_PRO_V1.1.1_Setup.exe
           if-no-files-found: error
           retention-days: 14
