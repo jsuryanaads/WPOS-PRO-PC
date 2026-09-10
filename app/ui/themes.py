@@ -45,8 +45,8 @@ QPushButton:hover { background: #2f638e; }
 QPushButton:disabled { background: #b8c1ca; color: #eef1f3; }
 QPushButton#primary { background: #2673b8; }
 QPushButton#danger { background: #b54747; }
-QToolBar QPushButton#logoutButton { background: #2673b8; color: white; }
-QToolBar QPushButton#logoutButton:hover { background: #1f5f99; }
+QToolBar QPushButton#danger { background: #2673b8; color: white; }
+QToolBar QPushButton#danger:hover { background: #1f5f99; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #f8f9fa; color: #172033; border: 1px solid #c5cdd5; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #f8f9fa; color: #172033; border: 1px solid #c5cdd5; border-radius: 8px; alternate-background-color: #eef1f4; }
 QHeaderView::section { background: #d8e1e9; color: #17324d; padding: 8px; border: 0; font-weight: 700; }
@@ -86,8 +86,8 @@ QPushButton:hover { background: #8f252d; }
 QPushButton:disabled { background: #a99395; color: #eee7e7; }
 QPushButton#primary { background: #b9343b; }
 QPushButton#danger { background: #721b21; }
-QToolBar QPushButton#logoutButton { background: #b9343b; color: white; }
-QToolBar QPushButton#logoutButton:hover { background: #8f252d; }
+QToolBar QPushButton#danger { background: #b9343b; color: white; }
+QToolBar QPushButton#danger:hover { background: #8f252d; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #f1edef; color: #30282a; border: 1px solid #c9b8ba; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #f1edef; color: #30282a; border: 1px solid #c9b8ba; border-radius: 8px; alternate-background-color: #e7e0e2; }
 QHeaderView::section { background: #a9323a; color: white; padding: 8px; border: 0; font-weight: 700; }
@@ -127,8 +127,8 @@ QPushButton:hover { background: #3f5e49; }
 QPushButton:disabled { background: #9eafa2; color: #edf2ee; }
 QPushButton#primary { background: #496c55; }
 QPushButton#danger { background: #805050; }
-QToolBar QPushButton#logoutButton { background: #496c55; color: white; }
-QToolBar QPushButton#logoutButton:hover { background: #3f5e49; }
+QToolBar QPushButton#danger { background: #496c55; color: white; }
+QToolBar QPushButton#danger:hover { background: #3f5e49; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #eef2ef; color: #203027; border: 1px solid #b7c6ba; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #eef2ef; color: #203027; border: 1px solid #b7c6ba; border-radius: 8px; alternate-background-color: #e0e7e1; }
 QHeaderView::section { background: #587963; color: white; padding: 8px; border: 0; font-weight: 700; }
@@ -167,8 +167,8 @@ QPushButton:hover { background: #3d73bd; }
 QPushButton:disabled { background: #505966; color: #c5cad2; }
 QPushButton#primary { background: #396fae; }
 QPushButton#danger { background: #9d4f55; }
-QToolBar QPushButton#logoutButton { background: #396fae; color: white; }
-QToolBar QPushButton#logoutButton:hover { background: #4b83c3; }
+QToolBar QPushButton#danger { background: #396fae; color: white; }
+QToolBar QPushButton#danger:hover { background: #4b83c3; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #292f38; color: #e6eaf0; border: 1px solid #414956; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #242a33; color: #e6eaf0; border: 1px solid #39414c; border-radius: 8px; alternate-background-color: #292f38; }
 QHeaderView::section { background: #303946; color: #e6eaf0; padding: 8px; border: 0; font-weight: 700; }
