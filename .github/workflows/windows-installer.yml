@@ -93,7 +93,7 @@ jobs:
         shell: pwsh
         run: |
           $setup = (Resolve-Path "installer\WPOS_PRO_V1.1.5_Setup.exe").Path
-          $installDir = Join-Path $env:RUNNER_TEMP "WPOS PRO Smoke"
+          $installDir = Join-Path $env:RUNNER_TEMP "WPOSPRO_Smoke"
           if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
           $process = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$installDir" -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Smoke install gagal, exit code $($process.ExitCode)" }
