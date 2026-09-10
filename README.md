@@ -73,4 +73,4 @@ Jalankan `build.bat` pada Windows dengan Python dan PyInstaller terpasang.
 Compile `installer.iss` menggunakan Inno Setup setelah EXE berhasil dibuat.
 
 ## Status
-WPOS PRO V1.1.5 adalah kandidat build setelah CI PASS. Packaging EXE/Installer harus berasal dari source yang sudah diaudit dan lulus CI.
+WPOS PRO V1.1.5 final packaging candidate: source audited, CI passed, Windows EXE built and icon-verified, installer built and smoke-tested before release.
