@@ -220,7 +220,7 @@ class MainWindow(QMainWindow):
     def refresh_report(self):
         with SessionLocal() as s:
             sales = sales_summary(s); cash = cash_summary(s); stock = stock_summary(s); recent = recent_sales(s, 20)
-        lines = ["=== LAPORAN WPOS PRO ===", f"Transaksi: {sales['transactions']}", f"Omzet: {money(sales['omzet'])}", f"Kas masuk: {money(cash['cash_in'])}", f"Kas keluar: {money(cash['cash_out'])}", f"Saldo kas: {money(cash['balance'])", "", "=== STOK ==="]
+        lines = ["=== LAPORAN WPOS PRO ===", f"Transaksi: {sales['transactions']}", f"Omzet: {money(sales['omzet'])}", f"Kas masuk: {money(cash['cash_in'])}", f"Kas keluar: {money(cash['cash_out'])}", f"Saldo kas: {money(cash['balance'])}", "", "=== STOK ==="]
         for r in stock: lines.append(f"{r['name']} | {r['stock']} | {r['status']}")
         lines += ["", "=== TRANSAKSI TERBARU ==="]
         for x in recent: lines.append(f"{x.created_at:%Y-%m-%d %H:%M:%S} | {x.invoice_no} | {money(x.total)} | {x.payment_method}")
