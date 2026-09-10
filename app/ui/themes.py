@@ -13,6 +13,8 @@ QFrame#brandStrip { border-radius: 11px; }
 QLabel#brandName { font-size: 18px; font-weight: 800; background: transparent; }
 QLabel#brandVersion { font-size: 11px; background: transparent; }
 QLabel#total { border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
+QLabel#accountUser { font-weight: 700; }
+QPushButton#logoutButton { min-height: 30px; min-width: 64px; border-radius: 7px; padding: 6px 12px; font-weight: 700; }
 QFrame#loginCard { border-radius: 18px; }
 QLabel#loginTitle { font-size: 27px; font-weight: 800; }
 QLabel#loginVersion { font-size: 12px; }
@@ -32,6 +34,7 @@ QWidget, QMainWindow, QDialog { background: #edf0f3; color: #263442; }
 QMenuBar { background: #dfe4e9; color: #263442; border-bottom: 1px solid #c6cdd4; }
 QMenuBar::item:selected, QMenu::item:selected { background: #d3e2ef; color: #145a96; }
 QMenu { background: #f4f6f8; color: #263442; border: 1px solid #c6cdd4; }
+QToolBar { background: #dfe4e9; border: 0; spacing: 6px; }
 QTabWidget::pane { border: 0; background: #edf0f3; }
 QTabBar { background: #dfe4e9; }
 QTabBar::tab { background: #dfe4e9; color: #526070; padding: 10px 16px; border: 0; }
@@ -42,6 +45,8 @@ QPushButton:hover { background: #2f638e; }
 QPushButton:disabled { background: #b8c1ca; color: #eef1f3; }
 QPushButton#primary { background: #2673b8; }
 QPushButton#danger { background: #b54747; }
+QToolBar QPushButton#logoutButton { background: #2673b8; color: white; }
+QToolBar QPushButton#logoutButton:hover { background: #1f5f99; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #f8f9fa; color: #172033; border: 1px solid #c5cdd5; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #f8f9fa; color: #172033; border: 1px solid #c5cdd5; border-radius: 8px; alternate-background-color: #eef1f4; }
 QHeaderView::section { background: #d8e1e9; color: #17324d; padding: 8px; border: 0; font-weight: 700; }
@@ -70,6 +75,7 @@ QMenuBar { background: #5f2024; color: #fff4f4; border-bottom: 2px solid #a9323a
 QMenuBar::item:selected { background: #7c292e; color: #ffffff; }
 QMenu { background: #6b2429; color: #ffffff; border: 1px solid #a53a40; }
 QMenu::item:selected { background: #96343a; color: #ffffff; }
+QToolBar { background: #5f2024; border: 0; spacing: 6px; }
 QTabWidget::pane { border: 0; background: #e8e7e8; }
 QTabBar { background: #74272c; }
 QTabBar::tab { background: #74272c; color: #f9dddd; padding: 10px 16px; border: 0; }
@@ -80,6 +86,8 @@ QPushButton:hover { background: #8f252d; }
 QPushButton:disabled { background: #a99395; color: #eee7e7; }
 QPushButton#primary { background: #b9343b; }
 QPushButton#danger { background: #721b21; }
+QToolBar QPushButton#logoutButton { background: #b9343b; color: white; }
+QToolBar QPushButton#logoutButton:hover { background: #8f252d; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #f1edef; color: #30282a; border: 1px solid #c9b8ba; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #f1edef; color: #30282a; border: 1px solid #c9b8ba; border-radius: 8px; alternate-background-color: #e7e0e2; }
 QHeaderView::section { background: #a9323a; color: white; padding: 8px; border: 0; font-weight: 700; }
@@ -108,6 +116,7 @@ QMenuBar { background: #294638; color: #f2f6f3; border-bottom: 2px solid #66816d
 QMenuBar::item:selected { background: #3b5b46; color: white; }
 QMenu { background: #304f3c; color: white; border: 1px solid #587561; }
 QMenu::item:selected { background: #496b54; color: white; }
+QToolBar { background: #294638; border: 0; spacing: 6px; }
 QTabWidget::pane { border: 0; background: #e6ebe7; }
 QTabBar { background: #365641; }
 QTabBar::tab { background: #365641; color: #e0ebe3; padding: 10px 16px; border: 0; }
@@ -118,6 +127,8 @@ QPushButton:hover { background: #3f5e49; }
 QPushButton:disabled { background: #9eafa2; color: #edf2ee; }
 QPushButton#primary { background: #496c55; }
 QPushButton#danger { background: #805050; }
+QToolBar QPushButton#logoutButton { background: #496c55; color: white; }
+QToolBar QPushButton#logoutButton:hover { background: #3f5e49; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #eef2ef; color: #203027; border: 1px solid #b7c6ba; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #eef2ef; color: #203027; border: 1px solid #b7c6ba; border-radius: 8px; alternate-background-color: #e0e7e1; }
 QHeaderView::section { background: #587963; color: white; padding: 8px; border: 0; font-weight: 700; }
@@ -145,6 +156,7 @@ QWidget, QMainWindow, QDialog { background: #20242b; color: #e6eaf0; }
 QMenuBar { background: #15181e; color: #e6eaf0; border-bottom: 1px solid #343b46; }
 QMenuBar::item:selected, QMenu::item:selected { background: #2c3542; color: white; }
 QMenu { background: #242a33; color: #e6eaf0; border: 1px solid #3a424f; }
+QToolBar { background: #15181e; border: 0; spacing: 6px; }
 QTabWidget::pane { border: 0; background: #20242b; }
 QTabBar { background: #15181e; }
 QTabBar::tab { background: #15181e; color: #aab3c0; padding: 10px 16px; border: 0; }
@@ -155,6 +167,8 @@ QPushButton:hover { background: #3d73bd; }
 QPushButton:disabled { background: #505966; color: #c5cad2; }
 QPushButton#primary { background: #396fae; }
 QPushButton#danger { background: #9d4f55; }
+QToolBar QPushButton#logoutButton { background: #396fae; color: white; }
+QToolBar QPushButton#logoutButton:hover { background: #4b83c3; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #292f38; color: #e6eaf0; border: 1px solid #414956; border-radius: 6px; padding: 6px; }
 QTableWidget, QListWidget { background: #242a33; color: #e6eaf0; border: 1px solid #39414c; border-radius: 8px; alternate-background-color: #292f38; }
 QHeaderView::section { background: #303946; color: #e6eaf0; padding: 8px; border: 0; font-weight: 700; }
