@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLineEdit, QPushButton, QLabel, QDoubleSpinBox, QComboBox, QTableWidget,
     QTableWidgetItem, QFormLayout, QMessageBox, QTextEdit, QFileDialog,
-    QFrame, QHeaderView, QAbstractItemView, QGroupBox, QSpinBox
+    QFrame, QHeaderView, QAbstractItemView, QGroupBox, QSpinBox, QToolBar
 )
 
 from ..database import SessionLocal, engine
@@ -29,15 +29,30 @@ def money(value):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, user):
+    def __init__(self, user, logout_callback=None):
         super().__init__()
         self.user = user
+        self.logout_callback = logout_callback
         self.cart = []
         self.selected_product_id = None
         self.setWindowTitle("WPOS PRO V1.0")
         self.resize(1280, 800)
         self.setMinimumSize(1050, 680)
         self.setStyleSheet(self._stylesheet())
+
+        account_toolbar = QToolBar("Akun")
+        account_toolbar.setMovable(False)
+        account_toolbar.setFloatable(False)
+        account_toolbar.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        self.addToolBar(Qt.TopToolBarArea, account_toolbar)
+        account_toolbar.addWidget(QLabel(f"  {self.user.username} · {self.user.role}  "))
+        account_toolbar.addSeparator()
+        logout = QPushButton("Keluar")
+        logout.setObjectName("danger")
+        logout.setMinimumHeight(32)
+        logout.setToolTip("Keluar dari akun dan kembali ke halaman login")
+        logout.clicked.connect(self.logout)
+        account_toolbar.addWidget(logout)
 
         tabs = QTabWidget()
         tabs.setDocumentMode(True)
@@ -54,6 +69,22 @@ class MainWindow(QMainWindow):
             tabs.addTab(widget, title)
         tabs.currentChanged.connect(self.on_tab_changed)
         self.setCentralWidget(tabs)
+
+    def logout(self):
+        answer = QMessageBox.question(
+            self,
+            "Keluar",
+            f"Yakin ingin keluar dari akun {self.user.username}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        self.cart.clear()
+        if self.logout_callback:
+            self.logout_callback(self)
+        else:
+            self.close()
 
     def _stylesheet(self):
         return """
