@@ -38,7 +38,9 @@ jobs:
         run: pytest -q
 
       - name: Build EXE
-        run: python -m PyInstaller --clean --noconfirm --windowed --name "WPOS PRO" --paths . --add-data "assets;assets" run.py
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --windowed --name "WPOS PRO" --paths . --add-data "assets\branding\wpos_logo.png;assets\branding" run.py
 
       - name: Verify EXE and branding
         shell: pwsh
@@ -47,6 +49,7 @@ jobs:
           $logo = "dist\WPOS PRO\assets\branding\wpos_logo.png"
           if (!(Test-Path $exe)) { throw "WPOS PRO.exe tidak ditemukan" }
           if (!(Test-Path $logo)) { throw "Logo tidak ikut dipaketkan" }
+          Get-Item $exe, $logo | Format-List FullName,Length
 
       - name: Install Inno Setup
         shell: pwsh
