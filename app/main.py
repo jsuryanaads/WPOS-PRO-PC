@@ -29,7 +29,14 @@ def main():
         )
 
     def success(user):
-        window = MainWindow(user)
+        def logout_callback(window):
+            holder.pop("main", None)
+            window.close()
+            login_window = LoginWindow(success)
+            holder["login"] = login_window
+            login_window.show()
+
+        window = MainWindow(user, logout_callback=logout_callback)
         # Theme styles are owned by the application stylesheet. MainWindow's
         # legacy local stylesheet would override dark/special themes.
         window.setStyleSheet("")
@@ -53,6 +60,7 @@ def main():
         window.show()
 
     login = LoginWindow(success)
+    holder["login"] = login
     login.show()
     sys.exit(app.exec())
 
