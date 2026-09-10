@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -45,7 +46,7 @@ def apply_premium_cashier(window):
     intro.addLayout(title_box)
     intro.addStretch()
     intro.addWidget(
-        _label("ENTER  Tambah  ·  F2  Fokus Barcode  ·  Ctrl+K  Cari", "premiumShortcut"),
+        _label("ENTER  Tambah  ·  F2 / Ctrl+K  Fokus Barcode", "premiumShortcut"),
         0,
         Qt.AlignBottom,
     )
@@ -75,6 +76,14 @@ def apply_premium_cashier(window):
     add.clicked.connect(window.add_barcode)
     scan_l.addWidget(add)
     root.addWidget(scan)
+
+    # Keep cashier input keyboard-first: scanners can type directly, while
+    # F2 and Ctrl+K provide an explicit focus escape from any other control.
+    focus_barcode = lambda: (window.barcode.setFocus(), window.barcode.selectAll())
+    for shortcut_key in ("F2", "Ctrl+K"):
+        shortcut = QShortcut(QKeySequence(shortcut_key), page)
+        shortcut.setContext(Qt.WindowShortcut)
+        shortcut.activated.connect(focus_barcode)
 
     body = QHBoxLayout()
     body.setSpacing(12)
