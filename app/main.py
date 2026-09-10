@@ -18,6 +18,18 @@ def main():
     apply_theme(app, current_theme())
     holder = {}
 
+    def change_theme(key, menu, window):
+        set_theme(key)
+        # Polish creates presentation widgets; theme is applied last so the selected
+        # theme remains the authoritative visual layer.
+        apply_ui_polish(window)
+        apply_theme(app, key)
+        for action in menu.actions():
+            action.setChecked(action.text() == THEMES[key]["label"])
+        window.statusBar().showMessage(
+            f"WPOS PRO V1.0  |  {window.user.username}  |  {window.user.role}  |  Tema: {THEMES[key]['label']}"
+        )
+
     def success(user):
         window = MainWindow(user)
         apply_ui_polish(window)
@@ -25,10 +37,11 @@ def main():
         holder["main"] = window
 
         theme_menu = window.menuBar().addMenu("Tema")
+        selected = current_theme()
         for key, info in THEMES.items():
             action = theme_menu.addAction(info["label"])
             action.setCheckable(True)
-            action.setChecked(key == current_theme())
+            action.setChecked(key == selected)
             action.triggered.connect(lambda checked=False, k=key: change_theme(k, theme_menu, window))
 
         if str(user.role).upper() == "ADMIN":
@@ -37,16 +50,6 @@ def main():
             action.triggered.connect(lambda: UserManagementDialog(user, window).exec())
 
         window.show()
-
-    def change_theme(key, menu, window):
-        set_theme(key)
-        apply_theme(app, key)
-        apply_ui_polish(window)
-        for action in menu.actions():
-            action.setChecked(action.text() == THEMES[key]["label"])
-        window.statusBar().showMessage(
-            f"WPOS PRO V1.0  |  {window.user.username}  |  {window.user.role}  |  Tema: {THEMES[key]['label']}"
-        )
 
     login = LoginWindow(success)
     login.show()
