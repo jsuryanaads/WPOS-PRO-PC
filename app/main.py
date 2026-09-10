@@ -8,6 +8,7 @@ from .ui.modern_main_window import ModernMainWindow
 from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
+from .ui.ux2026 import apply_ux2026
 from .ui.themes import THEMES, apply_theme, current_theme, set_theme
 
 
@@ -19,11 +20,15 @@ def main():
     apply_theme(app, current_theme())
     holder = {}
 
+    def refresh_ui(window):
+        apply_ui_polish(window)
+        window._apply_modern_style()
+        apply_ux2026(window)
+
     def change_theme(key, menu, window):
         set_theme(key)
         apply_theme(app, key)
-        apply_ui_polish(window)
-        window._apply_modern_style()
+        refresh_ui(window)
         for action in menu.actions():
             action.setChecked(action.text() == THEMES[key]["label"])
         window.statusBar().showMessage(
@@ -40,9 +45,8 @@ def main():
 
         window = ModernMainWindow(user, logout_callback=logout_callback)
         window.setStyleSheet("")
-        apply_ui_polish(window)
         apply_theme(app, current_theme())
-        window._apply_modern_style()
+        refresh_ui(window)
         holder["main"] = window
 
         theme_menu = window.menuBar().addMenu("Tema")
