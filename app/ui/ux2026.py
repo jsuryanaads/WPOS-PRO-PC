@@ -31,10 +31,13 @@ def apply_ux2026(window):
         table.verticalHeader().setVisible(False)
         table.setWordWrap(False)
 
-    for widget in window.findChildren((QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QTextEdit)):
-        widget.setFocusPolicy(Qt.StrongFocus)
-        if isinstance(widget, QLineEdit):
-            widget.setClearButtonEnabled(True)
+    # PySide6 does not accept a tuple of widget classes in findChildren().
+    # Iterate the supported types explicitly for compatibility across Qt 6.x.
+    for widget_type in (QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QTextEdit):
+        for widget in window.findChildren(widget_type):
+            widget.setFocusPolicy(Qt.StrongFocus)
+            if isinstance(widget, QLineEdit):
+                widget.setClearButtonEnabled(True)
 
     shortcut = QShortcut(QKeySequence("Ctrl+K"), window)
     shortcut.setContext(Qt.WindowShortcut)
