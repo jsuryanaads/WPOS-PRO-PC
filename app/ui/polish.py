@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import QLabel, QFrame, QHBoxLayout, QStatusBar, QTableWidget
@@ -5,11 +7,15 @@ from PySide6.QtWidgets import QLabel, QFrame, QHBoxLayout, QStatusBar, QTableWid
 from .branding import LOGO_PATH
 
 
+FOOTER_TEXT = f"WPOS PRO V1.0 · © {datetime.now().year} Jsuryana · Created by Jsuryana"
+
+
 def apply_ui_polish(window):
     """Apply theme-neutral presentation refinements without overriding the selected theme."""
     if window.statusBar() is None:
         window.setStatusBar(QStatusBar(window))
-    window.statusBar().showMessage(f"WPOS PRO V1.0  |  {window.user.username}  |  {window.user.role}")
+    # Keep the bottom status/footer identity synchronized with the Dashboard footer.
+    window.statusBar().showMessage(FOOTER_TEXT)
 
     tabs = getattr(window, "tabs", None)
     if tabs:
