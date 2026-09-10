@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -32,7 +32,6 @@ class LoginWindow(QDialog):
         root = QVBoxLayout(self)
         root.setContentsMargins(32, 28, 32, 24)
         root.setSpacing(0)
-
         root.addStretch(1)
 
         card = QFrame()
@@ -66,7 +65,6 @@ class LoginWindow(QDialog):
         welcome.setObjectName("loginWelcome")
         welcome.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(welcome)
-
         card_layout.addSpacing(8)
 
         user_label = QLabel("USERNAME")
@@ -77,6 +75,7 @@ class LoginWindow(QDialog):
         self.username.setObjectName("loginInput")
         self.username.setPlaceholderText("Masukkan username")
         self.username.setMinimumHeight(44)
+        self.username.returnPressed.connect(self.handle_login)
         card_layout.addWidget(self.username)
 
         password_label = QLabel("PASSWORD")
@@ -101,7 +100,6 @@ class LoginWindow(QDialog):
         self.show_password.toggled.connect(self.toggle_password)
         password_row.addWidget(self.show_password)
         card_layout.addLayout(password_row)
-
         card_layout.addSpacing(8)
 
         self.login_button = QPushButton("MASUK")
@@ -113,6 +111,7 @@ class LoginWindow(QDialog):
         root.addWidget(card)
         root.addStretch(1)
 
+        # The year is generated at runtime, so it remains correct permanently.
         footer = QLabel(
             f"{APP_NAME} {APP_VERSION}  ·  © {datetime.now().year} Jsuryana  ·  Created by Jsuryana"
         )
@@ -121,63 +120,7 @@ class LoginWindow(QDialog):
         footer.setWordWrap(True)
         root.addWidget(footer)
 
-        self._apply_login_polish()
         self.username.setFocus()
-
-    def _apply_login_polish(self):
-        # Object-specific styling complements the active global WPOS theme.
-        self.setStyleSheet(
-            """
-            QDialog#loginWindow {
-                background: transparent;
-            }
-            QFrame#loginCard {
-                background: rgba(255, 255, 255, 245);
-                border: 1px solid rgba(148, 163, 184, 90);
-                border-radius: 18px;
-            }
-            QLabel#loginTitle {
-                font-size: 27px;
-                font-weight: 800;
-            }
-            QLabel#loginVersion {
-                font-size: 12px;
-                color: #64748b;
-            }
-            QLabel#loginWelcome {
-                font-size: 13px;
-                color: #64748b;
-                margin-bottom: 4px;
-            }
-            QLabel#loginFieldLabel {
-                font-size: 11px;
-                font-weight: 800;
-                letter-spacing: 1px;
-                color: #64748b;
-            }
-            QLineEdit#loginInput {
-                min-height: 30px;
-                padding: 6px 12px;
-                border-radius: 9px;
-            }
-            QPushButton#loginPrimaryButton {
-                min-height: 30px;
-                border-radius: 10px;
-                font-size: 14px;
-                font-weight: 800;
-            }
-            QPushButton#loginSecondaryButton {
-                min-width: 58px;
-                border-radius: 9px;
-                font-weight: 700;
-            }
-            QLabel#loginFooter {
-                padding-top: 12px;
-                font-size: 11px;
-                color: #64748b;
-            }
-            """
-        )
 
     def toggle_password(self, visible):
         self.password.setEchoMode(QLineEdit.Normal if visible else QLineEdit.Password)
