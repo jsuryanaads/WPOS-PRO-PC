@@ -1,8 +1,17 @@
 from datetime import datetime
 from decimal import Decimal
-from PySide6.QtWidgets import (QMainWindow,QTabWidget,QWidget,QVBoxLayout,QHBoxLayout,QLineEdit,QPushButton,QLabel,QDoubleSpinBox,QComboBox,QTableWidget,QTableWidgetItem,QFormLayout,QMessageBox,QTextEdit,QFileDialog)
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QMainWindow, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+    QLineEdit, QPushButton, QLabel, QDoubleSpinBox, QComboBox, QTableWidget,
+    QTableWidgetItem, QFormLayout, QMessageBox, QTextEdit, QFileDialog,
+    QFrame, QHeaderView, QAbstractItemView, QGroupBox, QSpinBox
+)
+
 from ..database import SessionLocal, engine
-from ..models import Product, Supplier, Category, Unit
+from ..models import Product, Supplier, Category, Unit, Sale
 from ..services.sales import create_sale
 from ..services.products import create_product, update_product, deactivate_product
 from ..services.stock import adjust_stock
@@ -14,182 +23,835 @@ from ..services.settings import get_settings, save_settings
 from ..services.printer import available_printers, print_receipt, test_print
 from .master_data import category_page, unit_page, supplier_page, customer_page
 
-def money(value): return f"Rp {Decimal(str(value)):,.0f}".replace(",", ".")
+
+def money(value):
+    return f"Rp {Decimal(str(value)):,.0f}".replace(",", ".")
+
 
 class MainWindow(QMainWindow):
-    def __init__(self,user):
-        super().__init__(); self.user=user; self.cart=[]; self.setWindowTitle("WPOS PRO V1.0")
-        tabs=QTabWidget(); tabs.addTab(self.dashboard(),"Dashboard"); tabs.addTab(self.cashier(),"Kasir"); tabs.addTab(self.products(),"Produk"); tabs.addTab(self.stock_page(),"Stok & Mutasi"); tabs.addTab(self.purchase_page(),"Pembelian"); tabs.addTab(self.cash_page(),"Kas"); tabs.addTab(self.report_page(),"Laporan"); tabs.addTab(self.settings_page(),"Pengaturan Toko"); tabs.addTab(self.printer_page(),"Printer"); tabs.addTab(self.backup_page(),"Backup / Restore"); tabs.addTab(category_page(),"Kategori"); tabs.addTab(unit_page(),"Satuan"); tabs.addTab(supplier_page(),"Supplier"); tabs.addTab(customer_page(),"Pelanggan"); self.setCentralWidget(tabs); self.resize(1200,760)
+    def __init__(self, user):
+        super().__init__()
+        self.user = user
+        self.cart = []
+        self.selected_product_id = None
+        self.setWindowTitle("WPOS PRO V1.0")
+        self.resize(1280, 800)
+        self.setMinimumSize(1050, 680)
+        self.setStyleSheet(self._stylesheet())
+
+        tabs = QTabWidget()
+        tabs.setDocumentMode(True)
+        tabs.setMovable(False)
+        self.tabs = tabs
+        pages = [
+            (self.dashboard(), "Dashboard"),
+            (self.cashier(), "Kasir"),
+            (self.products(), "Produk"),
+            (self.stock_page(), "Stok & Mutasi"),
+            (self.purchase_page(), "Pembelian"),
+            (self.cash_page(), "Kas"),
+            (self.report_page(), "Laporan"),
+            (self.settings_page(), "Pengaturan Toko"),
+            (self.printer_page(), "Printer"),
+            (self.backup_page(), "Backup / Restore"),
+            (category_page(), "Kategori"),
+            (unit_page(), "Satuan"),
+            (supplier_page(), "Supplier"),
+            (customer_page(), "Pelanggan"),
+        ]
+        for widget, title in pages:
+            tabs.addTab(widget, title)
+        tabs.currentChanged.connect(self.on_tab_changed)
+        self.setCentralWidget(tabs)
+
+    def _stylesheet(self):
+        return """
+        QMainWindow { background: #f4f6f8; }
+        QTabWidget::pane { border: 0; background: #f4f6f8; }
+        QTabBar::tab { padding: 9px 15px; margin-right: 2px; background: #e8ebef; border: 0; }
+        QTabBar::tab:selected { background: #ffffff; font-weight: 700; }
+        QLabel#pageTitle { font-size: 24px; font-weight: 800; color: #17202a; }
+        QLabel#pageSubtitle { color: #667085; font-size: 13px; }
+        QFrame#card { background: white; border: 1px solid #e2e6ea; border-radius: 10px; }
+        QLabel#cardTitle { color: #667085; font-size: 12px; font-weight: 600; }
+        QLabel#cardValue { color: #111827; font-size: 22px; font-weight: 800; }
+        QGroupBox { background: white; border: 1px solid #e2e6ea; border-radius: 10px; margin-top: 10px; padding-top: 12px; font-weight: 700; }
+        QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
+        QLineEdit, QDoubleSpinBox, QComboBox, QTextEdit { background: white; border: 1px solid #cfd5dc; border-radius: 6px; padding: 6px; }
+        QPushButton { background: #1f2937; color: white; border: 0; border-radius: 6px; padding: 8px 14px; font-weight: 700; }
+        QPushButton:hover { background: #374151; }
+        QPushButton#primary { background: #111827; font-size: 14px; padding: 10px 18px; }
+        QPushButton#danger { background: #b42318; }
+        QLabel#total { background: #111827; color: white; border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
+        QTableWidget { background: white; border: 1px solid #e2e6ea; border-radius: 8px; gridline-color: #eef0f2; }
+        QHeaderView::section { background: #f3f4f6; padding: 7px; border: 0; font-weight: 700; }
+        """
+
+    def page_header(self, title, subtitle):
+        box = QWidget()
+        layout = QVBoxLayout(box)
+        layout.setContentsMargins(0, 0, 0, 8)
+        t = QLabel(title)
+        t.setObjectName("pageTitle")
+        s = QLabel(subtitle)
+        s.setObjectName("pageSubtitle")
+        layout.addWidget(t)
+        layout.addWidget(s)
+        return box
+
+    def card(self, title, value):
+        frame = QFrame()
+        frame.setObjectName("card")
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(16, 14, 16, 14)
+        a = QLabel(title)
+        a.setObjectName("cardTitle")
+        b = QLabel(value)
+        b.setObjectName("cardValue")
+        layout.addWidget(a)
+        layout.addWidget(b)
+        return frame, b
+
     def dashboard(self):
-        w=QWidget(); l=QVBoxLayout(w); l.addWidget(QLabel(f"<h1>WPOS PRO</h1>Login: {self.user.username} ({self.user.role})"));
-        with SessionLocal() as s: summary=sales_summary(s); low=low_stock_count(s); products=s.query(Product).count(); cash=cash_summary(s)
-        for x in [f"Transaksi: {summary['transactions']}",f"Produk: {products}",f"Stok menipis/habis: {low}",f"Omzet: {money(summary['omzet'])}",f"Saldo kas: {money(cash['balance'])}"]: l.addWidget(QLabel(x))
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Dashboard", f"Selamat datang, {self.user.username} · Role {self.user.role}"))
+
+        with SessionLocal() as s:
+            summary = sales_summary(s)
+            low = low_stock_count(s)
+            products = s.query(Product).filter_by(active=True).count()
+            cash = cash_summary(s)
+            recent = recent_sales(s, 8)
+            low_rows = stock_summary(s)
+            low_rows = [x for x in low_rows if x["status"] != "AMAN"][:8]
+
+        grid = QGridLayout()
+        grid.setSpacing(12)
+        cards = [
+            self.card("TRANSAKSI", str(summary["transactions"])),
+            self.card("PRODUK AKTIF", str(products)),
+            self.card("STOK MENIPIS / HABIS", str(low)),
+            self.card("OMZET", money(summary["omzet"])),
+            self.card("SALDO KAS", money(cash["balance"])),
+        ]
+        for i, (frame, _) in enumerate(cards):
+            grid.addWidget(frame, 0, i)
+        l.addLayout(grid)
+
+        actions = QHBoxLayout()
+        for text, index in [("+ Transaksi Baru", 1), ("+ Produk", 2), ("Stok & Mutasi", 3), ("Laporan", 6)]:
+            b = QPushButton(text)
+            b.clicked.connect(lambda checked=False, idx=index: self.tabs.setCurrentIndex(idx))
+            actions.addWidget(b)
+        actions.addStretch()
+        l.addLayout(actions)
+
+        body = QHBoxLayout()
+        recent_box = QGroupBox("Transaksi Terakhir")
+        recent_layout = QVBoxLayout(recent_box)
+        self.dashboard_sales = QTableWidget(0, 4)
+        self.dashboard_sales.setHorizontalHeaderLabels(["Invoice", "Waktu", "Metode", "Total"])
+        self._prepare_table(self.dashboard_sales)
+        recent_layout.addWidget(self.dashboard_sales)
+        for sale in recent:
+            row = self.dashboard_sales.rowCount()
+            self.dashboard_sales.insertRow(row)
+            values = [sale.invoice_no, sale.created_at.strftime("%d/%m/%Y %H:%M"), sale.payment_method, money(sale.total)]
+            for c, v in enumerate(values):
+                self.dashboard_sales.setItem(row, c, QTableWidgetItem(str(v)))
+
+        low_box = QGroupBox("Perhatian Stok")
+        low_layout = QVBoxLayout(low_box)
+        self.dashboard_low = QTableWidget(0, 3)
+        self.dashboard_low.setHorizontalHeaderLabels(["Produk", "Stok", "Status"])
+        self._prepare_table(self.dashboard_low)
+        low_layout.addWidget(self.dashboard_low)
+        for item in low_rows:
+            row = self.dashboard_low.rowCount()
+            self.dashboard_low.insertRow(row)
+            for c, v in enumerate([item["name"], item["stock"], item["status"]]):
+                self.dashboard_low.setItem(row, c, QTableWidgetItem(str(v)))
+
+        body.addWidget(recent_box, 3)
+        body.addWidget(low_box, 2)
+        l.addLayout(body, 1)
         return w
+
+    def _prepare_table(self, table):
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.setAlternatingRowColors(True)
+        table.horizontalHeader().setStretchLastSection(True)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.verticalHeader().setVisible(False)
+
     def cashier(self):
-        w=QWidget(); l=QVBoxLayout(w); top=QHBoxLayout(); self.barcode=QLineEdit(); self.barcode.setPlaceholderText("Scan / ketik barcode + Enter"); self.barcode.returnPressed.connect(self.add_barcode); top.addWidget(self.barcode); self.qty=QDoubleSpinBox(); self.qty.setRange(.001,999999); self.qty.setDecimals(3); self.qty.setValue(1); top.addWidget(self.qty); b=QPushButton("Tambah"); b.clicked.connect(self.add_barcode); top.addWidget(b); l.addLayout(top); self.cart_table=QTableWidget(0,5); self.cart_table.setHorizontalHeaderLabels(["Barcode","Produk","Qty","Harga","Subtotal"]); l.addWidget(self.cart_table); pay=QHBoxLayout(); self.discount=QDoubleSpinBox(); self.discount.setRange(0,999999999); self.discount.valueChanged.connect(self.refresh_cart); self.paid=QDoubleSpinBox(); self.paid.setRange(0,999999999); self.method=QComboBox(); self.method.addItems(["CASH","QRIS","TRANSFER","DEBIT"]); pay.addWidget(QLabel("Diskon")); pay.addWidget(self.discount); pay.addWidget(QLabel("Bayar")); pay.addWidget(self.paid); pay.addWidget(self.method); self.total_label=QLabel("TOTAL Rp 0"); pay.addWidget(self.total_label); b=QPushButton("BAYAR & SIMPAN"); b.clicked.connect(self.checkout); pay.addWidget(b); b=QPushButton("CLEAR"); b.clicked.connect(self.clear_cart); pay.addWidget(b); l.addLayout(pay); return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Kasir", "Scan barcode, susun keranjang, lalu selesaikan pembayaran."))
+
+        scan = QGroupBox("Input Barang")
+        scan_l = QHBoxLayout(scan)
+        self.barcode = QLineEdit()
+        self.barcode.setPlaceholderText("Scan / ketik barcode lalu Enter")
+        self.barcode.returnPressed.connect(self.add_barcode)
+        self.qty = QDoubleSpinBox()
+        self.qty.setRange(0.001, 999999)
+        self.qty.setDecimals(3)
+        self.qty.setValue(1)
+        add = QPushButton("Tambah Barang")
+        add.setObjectName("primary")
+        add.clicked.connect(self.add_barcode)
+        scan_l.addWidget(QLabel("Barcode"))
+        scan_l.addWidget(self.barcode, 3)
+        scan_l.addWidget(QLabel("Qty"))
+        scan_l.addWidget(self.qty)
+        scan_l.addWidget(add)
+        l.addWidget(scan)
+
+        self.cart_table = QTableWidget(0, 5)
+        self.cart_table.setHorizontalHeaderLabels(["Barcode", "Produk", "Qty", "Harga", "Subtotal"])
+        self._prepare_table(self.cart_table)
+        l.addWidget(self.cart_table, 1)
+
+        pay = QGroupBox("Pembayaran")
+        pay_l = QGridLayout(pay)
+        self.discount = QDoubleSpinBox()
+        self.discount.setRange(0, 999999999)
+        self.discount.valueChanged.connect(self.refresh_cart)
+        self.paid = QDoubleSpinBox()
+        self.paid.setRange(0, 999999999)
+        self.method = QComboBox()
+        self.method.addItems(["CASH", "QRIS", "TRANSFER", "DEBIT"])
+        self.method.currentTextChanged.connect(self.payment_method_changed)
+        self.total_label = QLabel("TOTAL Rp 0")
+        self.total_label.setObjectName("total")
+        self.change_label = QLabel("Kembalian: Rp 0")
+        pay_l.addWidget(QLabel("Diskon"), 0, 0)
+        pay_l.addWidget(self.discount, 0, 1)
+        pay_l.addWidget(QLabel("Metode"), 0, 2)
+        pay_l.addWidget(self.method, 0, 3)
+        pay_l.addWidget(QLabel("Bayar"), 0, 4)
+        pay_l.addWidget(self.paid, 0, 5)
+        pay_l.addWidget(self.total_label, 0, 6, 1, 2)
+        pay_l.addWidget(self.change_label, 1, 0, 1, 4)
+        checkout = QPushButton("BAYAR & SIMPAN")
+        checkout.setObjectName("primary")
+        checkout.clicked.connect(self.checkout)
+        clear = QPushButton("CLEAR")
+        clear.setObjectName("danger")
+        clear.clicked.connect(self.clear_cart)
+        pay_l.addWidget(checkout, 1, 5)
+        pay_l.addWidget(clear, 1, 7)
+        l.addWidget(pay)
+        return w
+
+    def payment_method_changed(self, method):
+        noncash = method != "CASH"
+        self.paid.setReadOnly(noncash)
+        if noncash:
+            self.paid.setValue(float(self.refresh_cart()))
+        self.update_change()
+
     def add_barcode(self):
-        code=self.barcode.text().strip()
-        if not code:return
+        code = self.barcode.text().strip()
+        if not code:
+            return
         with SessionLocal() as s:
-            p=s.query(Product).filter_by(barcode=code,active=True).first()
-            if not p: QMessageBox.warning(self,"Produk","Barcode tidak ditemukan."); return
-            q=Decimal(str(self.qty.value())); e=next((x for x in self.cart if x["product_id"]==p.id),None); cur=e["quantity"] if e else Decimal(0)
-            if cur+q>Decimal(str(p.stock)): QMessageBox.warning(self,"Stok","Stok tidak mencukupi."); return
-        if e:e["quantity"]+=q
-        else:self.cart.append({"product_id":p.id,"quantity":q})
-        self.barcode.clear(); self.refresh_cart()
+            p = s.query(Product).filter_by(barcode=code, active=True).first()
+            if not p:
+                QMessageBox.warning(self, "Produk", "Barcode tidak ditemukan.")
+                return
+            q = Decimal(str(self.qty.value()))
+            entry = next((x for x in self.cart if x["product_id"] == p.id), None)
+            current = entry["quantity"] if entry else Decimal("0")
+            if current + q > Decimal(str(p.stock)):
+                QMessageBox.warning(self, "Stok", f"Stok {p.name} tidak mencukupi.")
+                return
+        if entry:
+            entry["quantity"] += q
+        else:
+            self.cart.append({"product_id": p.id, "quantity": q})
+        self.barcode.clear()
+        self.qty.setValue(1)
+        self.refresh_cart()
+        self.barcode.setFocus()
+
     def refresh_cart(self):
-        self.cart_table.setRowCount(len(self.cart)); sub=Decimal(0)
+        self.cart_table.setRowCount(len(self.cart))
+        subtotal = Decimal("0")
         with SessionLocal() as s:
-            for i,it in enumerate(self.cart):
-                p=s.get(Product,it["product_id"])
-                if not p:continue
-                line=Decimal(str(p.selling_price))*it["quantity"]; sub+=line
-                for c,v in enumerate([p.barcode,p.name,str(it["quantity"]),str(p.selling_price),str(line)]):self.cart_table.setItem(i,c,QTableWidgetItem(v))
-        total=max(Decimal(0),sub-Decimal(str(self.discount.value()))); self.total_label.setText(f"TOTAL {money(total)}"); return total
-    def clear_cart(self): self.cart.clear(); self.discount.setValue(0); self.paid.setValue(0); self.refresh_cart()
+            for i, item in enumerate(self.cart):
+                p = s.get(Product, item["product_id"])
+                if not p:
+                    continue
+                line = Decimal(str(p.selling_price)) * item["quantity"]
+                subtotal += line
+                values = [p.barcode, p.name, item["quantity"], money(p.selling_price), money(line)]
+                for c, value in enumerate(values):
+                    self.cart_table.setItem(i, c, QTableWidgetItem(str(value)))
+        total = max(Decimal("0"), subtotal - Decimal(str(self.discount.value())))
+        self.total_label.setText(f"TOTAL {money(total)}")
+        if self.method.currentText() != "CASH":
+            self.paid.blockSignals(True)
+            self.paid.setValue(float(total))
+            self.paid.blockSignals(False)
+        self.update_change(total)
+        return total
+
+    def update_change(self, total=None):
+        if total is None:
+            total = self.refresh_cart() if hasattr(self, "cart_table") else Decimal("0")
+        paid = Decimal(str(self.paid.value()))
+        change = max(Decimal("0"), paid - total) if self.method.currentText() == "CASH" else Decimal("0")
+        self.change_label.setText(f"Kembalian: {money(change)}")
+
+    def clear_cart(self):
+        self.cart.clear()
+        self.discount.setValue(0)
+        self.paid.setValue(0)
+        self.refresh_cart()
+        self.barcode.setFocus()
+
     def checkout(self):
         try:
-            if not self.cart:raise ValueError("Keranjang kosong")
-            total=self.refresh_cart(); paid=Decimal(str(self.paid.value()))
-            if paid<total:raise ValueError("Pembayaran kurang")
-            invoice="INV-"+datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            if not self.cart:
+                raise ValueError("Keranjang kosong")
+            total = self.refresh_cart()
+            paid = Decimal(str(self.paid.value()))
+            if self.method.currentText() == "CASH" and paid < total:
+                raise ValueError("Pembayaran kurang")
+            if self.method.currentText() != "CASH":
+                paid = total
+            invoice = "INV-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f")
             with SessionLocal() as s:
-                sale=create_sale(s,self.cart,self.discount.value(),paid,self.method.currentText(),invoice); items=[]
-                for it in self.cart:
-                    p=s.get(Product,it["product_id"])
-                    if p:items.append({"name":p.name,"quantity":it["quantity"],"unit_price":p.selling_price,"line_total":p.selling_price*it["quantity"]})
-            print_receipt(self,sale,items); QMessageBox.information(self,"Berhasil",f"{sale.invoice_no}\nTotal {money(sale.total)}\nKembalian {money(sale.change)}"); self.clear_cart()
-        except Exception as exc:QMessageBox.critical(self,"Transaksi gagal",str(exc))
+                sale = create_sale(s, self.cart, self.discount.value(), paid, self.method.currentText(), invoice)
+                items = []
+                for item in self.cart:
+                    p = s.get(Product, item["product_id"])
+                    if p:
+                        items.append({"name": p.name, "quantity": item["quantity"], "unit_price": p.selling_price, "line_total": p.selling_price * item["quantity"]})
+            printed = print_receipt(self, sale, items)
+            if printed:
+                message = f"Transaksi tersimpan dan struk dicetak.\n{sale.invoice_no}\nTotal {money(sale.total)}\nKembalian {money(sale.change)}"
+            else:
+                message = f"Transaksi tersimpan. Struk tidak dicetak.\nAnda dapat mencetak ulang dari menu Laporan.\n{sale.invoice_no}\nTotal {money(sale.total)}"
+            QMessageBox.information(self, "Transaksi Berhasil", message)
+            self.clear_cart()
+            self.refresh_dashboard_data()
+        except Exception as exc:
+            QMessageBox.critical(self, "Transaksi gagal", str(exc))
+
+    def refresh_dashboard_data(self):
+        # Rebuild dashboard when the user returns to it; no database mutation is performed here.
+        return
+
     def products(self):
-        w=QWidget(); l=QVBoxLayout(w); f=QFormLayout(); self.p_barcode=QLineEdit(); self.p_name=QLineEdit(); self.p_category=QComboBox(); self.p_unit=QComboBox(); self.p_buy=QDoubleSpinBox(); self.p_sell=QDoubleSpinBox(); self.p_stock=QDoubleSpinBox(); self.p_min=QDoubleSpinBox(); self.load_product_options()
-        for x in (self.p_buy,self.p_sell):x.setRange(0,999999999)
-        for x in (self.p_stock,self.p_min):x.setRange(0,999999999);x.setDecimals(3)
-        for a,b in [("Barcode",self.p_barcode),("Nama",self.p_name),("Kategori",self.p_category),("Satuan",self.p_unit),("Harga Beli",self.p_buy),("Harga Jual",self.p_sell),("Stok Awal",self.p_stock),("Stok Minimum",self.p_min)]:f.addRow(a,b)
-        l.addLayout(f); bs=QHBoxLayout(); b=QPushButton("Tambah Produk"); b.clicked.connect(self.save_product); bs.addWidget(b); b=QPushButton("Edit Terpilih"); b.clicked.connect(self.edit_product); bs.addWidget(b); b=QPushButton("Nonaktifkan"); b.clicked.connect(self.deactivate_selected); bs.addWidget(b); l.addLayout(bs); self.product_table=QTableWidget(0,8); self.product_table.setHorizontalHeaderLabels(["ID","Barcode","Nama","Kategori","Satuan","Beli","Jual","Stok"]); l.addWidget(self.product_table); self.product_table.cellClicked.connect(self.select_product); self.load_products(); return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Produk", "Kelola master barang, harga, kategori, satuan, dan stok awal."))
+        form_box = QGroupBox("Data Produk")
+        form = QFormLayout(form_box)
+        self.p_barcode = QLineEdit()
+        self.p_name = QLineEdit()
+        self.p_category = QComboBox()
+        self.p_unit = QComboBox()
+        self.p_buy = QDoubleSpinBox()
+        self.p_sell = QDoubleSpinBox()
+        self.p_stock = QDoubleSpinBox()
+        self.p_min = QDoubleSpinBox()
+        self.load_product_options()
+        for x in (self.p_buy, self.p_sell):
+            x.setRange(0, 999999999)
+        for x in (self.p_stock, self.p_min):
+            x.setRange(0, 999999999)
+            x.setDecimals(3)
+        fields = [("Barcode", self.p_barcode), ("Nama Produk", self.p_name), ("Kategori", self.p_category), ("Satuan", self.p_unit), ("Harga Beli", self.p_buy), ("Harga Jual", self.p_sell), ("Stok Awal", self.p_stock), ("Stok Minimum", self.p_min)]
+        for a, b in fields:
+            form.addRow(a, b)
+        l.addWidget(form_box)
+        buttons = QHBoxLayout()
+        for text, slot, obj in [("Tambah Produk", self.save_product, "primary"), ("Edit Terpilih", self.edit_product, ""), ("Nonaktifkan", self.deactivate_selected, "danger"), ("Form Baru", self.clear_product_form, "")]:
+            b = QPushButton(text)
+            if obj:
+                b.setObjectName(obj)
+            b.clicked.connect(slot)
+            buttons.addWidget(b)
+        buttons.addStretch()
+        l.addLayout(buttons)
+        self.product_table = QTableWidget(0, 8)
+        self.product_table.setHorizontalHeaderLabels(["ID", "Barcode", "Nama", "Kategori", "Satuan", "Beli", "Jual", "Stok"])
+        self._prepare_table(self.product_table)
+        self.product_table.cellClicked.connect(self.select_product)
+        l.addWidget(self.product_table, 1)
+        self.load_products()
+        return w
+
     def load_product_options(self):
-        with SessionLocal() as s:cats=s.query(Category).filter_by(active=True).order_by(Category.name).all(); units=s.query(Unit).order_by(Unit.name).all()
-        self.p_category.clear(); self.p_unit.clear(); self.p_category.addItem("Tanpa Kategori",None); self.p_unit.addItem("Tanpa Satuan",None)
-        for x in cats:self.p_category.addItem(x.name,x.id)
-        for x in units:self.p_unit.addItem(x.name,x.id)
+        with SessionLocal() as s:
+            cats = s.query(Category).filter_by(active=True).order_by(Category.name).all()
+            units = s.query(Unit).order_by(Unit.name).all()
+        self.p_category.clear()
+        self.p_unit.clear()
+        self.p_category.addItem("Tanpa Kategori", None)
+        self.p_unit.addItem("Tanpa Satuan", None)
+        for x in cats:
+            self.p_category.addItem(x.name, x.id)
+        for x in units:
+            self.p_unit.addItem(x.name, x.id)
+
     def load_products(self):
-        with SessionLocal() as s:r=s.query(Product).order_by(Product.name).all(); cats={x.id:x.name for x in s.query(Category).all()}; units={x.id:x.name for x in s.query(Unit).all()}
-        self.product_table.setRowCount(len(r))
-        for i,p in enumerate(r):
-            for c,v in enumerate([p.id,p.barcode,p.name,cats.get(p.category_id,""),units.get(p.unit_id,""),p.purchase_price,p.selling_price,p.stock]):self.product_table.setItem(i,c,QTableWidgetItem(str(v)))
-    def select_product(self,row,_):
-        self.selected_product_id=int(self.product_table.item(row,0).text())
-        with SessionLocal() as s:p=s.get(Product,self.selected_product_id)
+        with SessionLocal() as s:
+            rows = s.query(Product).order_by(Product.name).all()
+            cats = {x.id: x.name for x in s.query(Category).all()}
+            units = {x.id: x.name for x in s.query(Unit).all()}
+        self.product_table.setRowCount(len(rows))
+        for i, p in enumerate(rows):
+            values = [p.id, p.barcode, p.name, cats.get(p.category_id, ""), units.get(p.unit_id, ""), money(p.purchase_price), money(p.selling_price), p.stock]
+            for c, value in enumerate(values):
+                self.product_table.setItem(i, c, QTableWidgetItem(str(value)))
+
+    def select_product(self, row, _column):
+        self.selected_product_id = int(self.product_table.item(row, 0).text())
+        with SessionLocal() as s:
+            p = s.get(Product, self.selected_product_id)
         if p:
-            self.p_barcode.setText(p.barcode);self.p_name.setText(p.name);self.p_buy.setValue(float(p.purchase_price));self.p_sell.setValue(float(p.selling_price));self.p_min.setValue(float(p.minimum_stock));self.p_stock.setValue(float(p.stock))
-            self.p_category.setCurrentIndex(self.p_category.findData(p.category_id)); self.p_unit.setCurrentIndex(self.p_unit.findData(p.unit_id))
+            self.p_barcode.setText(p.barcode)
+            self.p_name.setText(p.name)
+            self.p_buy.setValue(float(p.purchase_price))
+            self.p_sell.setValue(float(p.selling_price))
+            self.p_min.setValue(float(p.minimum_stock))
+            self.p_stock.setValue(float(p.stock))
+            self.p_category.setCurrentIndex(max(0, self.p_category.findData(p.category_id)))
+            self.p_unit.setCurrentIndex(max(0, self.p_unit.findData(p.unit_id)))
+
     def save_product(self):
         try:
-            with SessionLocal() as s:create_product(s,self.p_barcode.text(),self.p_name.text(),self.p_buy.value(),self.p_sell.value(),self.p_stock.value(),self.p_min.value(),self.p_category.currentData(),self.p_unit.currentData())
-            self.load_products();self.clear_product_form()
-        except Exception as e:QMessageBox.warning(self,"Produk",str(e))
+            with SessionLocal() as s:
+                create_product(s, self.p_barcode.text(), self.p_name.text(), self.p_buy.value(), self.p_sell.value(), self.p_stock.value(), self.p_min.value(), self.p_category.currentData(), self.p_unit.currentData())
+            self.load_products()
+            self.clear_product_form()
+            QMessageBox.information(self, "Produk", "Produk berhasil ditambahkan.")
+        except Exception as e:
+            QMessageBox.warning(self, "Produk", str(e))
+
     def edit_product(self):
         try:
-            pid=getattr(self,"selected_product_id",None)
-            if not pid:raise ValueError("Pilih produk terlebih dahulu")
-            with SessionLocal() as s:update_product(s,pid,barcode=self.p_barcode.text(),name=self.p_name.text(),purchase_price=self.p_buy.value(),selling_price=self.p_sell.value(),minimum_stock=self.p_min.value(),category_id=self.p_category.currentData(),unit_id=self.p_unit.currentData())
-            self.load_products();QMessageBox.information(self,"Produk","Produk diperbarui.")
-        except Exception as e:QMessageBox.warning(self,"Produk",str(e))
+            pid = getattr(self, "selected_product_id", None)
+            if not pid:
+                raise ValueError("Pilih produk terlebih dahulu")
+            with SessionLocal() as s:
+                update_product(s, pid, barcode=self.p_barcode.text(), name=self.p_name.text(), purchase_price=self.p_buy.value(), selling_price=self.p_sell.value(), minimum_stock=self.p_min.value(), category_id=self.p_category.currentData(), unit_id=self.p_unit.currentData())
+            self.load_products()
+            QMessageBox.information(self, "Produk", "Produk diperbarui.")
+        except Exception as e:
+            QMessageBox.warning(self, "Produk", str(e))
+
     def deactivate_selected(self):
         try:
-            pid=getattr(self,"selected_product_id",None)
-            if not pid:raise ValueError("Pilih produk terlebih dahulu")
-            with SessionLocal() as s:deactivate_product(s,pid)
+            pid = getattr(self, "selected_product_id", None)
+            if not pid:
+                raise ValueError("Pilih produk terlebih dahulu")
+            with SessionLocal() as s:
+                deactivate_product(s, pid)
             self.load_products()
-        except Exception as e:QMessageBox.warning(self,"Produk",str(e))
-    def clear_product_form(self):self.p_barcode.clear();self.p_name.clear();self.p_buy.setValue(0);self.p_sell.setValue(0);self.p_stock.setValue(0);self.p_min.setValue(0);self.p_category.setCurrentIndex(0);self.p_unit.setCurrentIndex(0);self.selected_product_id=None
+            self.clear_product_form()
+        except Exception as e:
+            QMessageBox.warning(self, "Produk", str(e))
+
+    def clear_product_form(self):
+        self.p_barcode.clear()
+        self.p_name.clear()
+        self.p_buy.setValue(0)
+        self.p_sell.setValue(0)
+        self.p_stock.setValue(0)
+        self.p_min.setValue(0)
+        self.p_category.setCurrentIndex(0)
+        self.p_unit.setCurrentIndex(0)
+        self.selected_product_id = None
+
     def stock_page(self):
-        w=QWidget();l=QVBoxLayout(w);f=QHBoxLayout();self.stock_product=QComboBox();self.stock_qty=QDoubleSpinBox();self.stock_qty.setRange(-999999,999999);self.stock_qty.setDecimals(3);self.stock_ref=QLineEdit();self.stock_ref.setPlaceholderText("Referensi/opname");self.load_stock_products();f.addWidget(self.stock_product);f.addWidget(self.stock_qty);f.addWidget(self.stock_ref);b=QPushButton("Simpan Mutasi");b.clicked.connect(self.save_stock_adjustment);f.addWidget(b);l.addLayout(f);self.stock_table=QTableWidget(0,5);self.stock_table.setHorizontalHeaderLabels(["Produk","Barcode","Stok","Minimum","Status"]);l.addWidget(self.stock_table);self.load_stock_table();return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Stok & Mutasi", "Lakukan penyesuaian stok dan pantau status persediaan."))
+        box = QGroupBox("Mutasi Stok")
+        f = QHBoxLayout(box)
+        self.stock_product = QComboBox()
+        self.stock_qty = QDoubleSpinBox()
+        self.stock_qty.setRange(-999999, 999999)
+        self.stock_qty.setDecimals(3)
+        self.stock_ref = QLineEdit()
+        self.stock_ref.setPlaceholderText("Referensi / nomor opname")
+        self.load_stock_products()
+        f.addWidget(self.stock_product, 3)
+        f.addWidget(self.stock_qty, 1)
+        f.addWidget(self.stock_ref, 3)
+        b = QPushButton("Simpan Mutasi")
+        b.setObjectName("primary")
+        b.clicked.connect(self.save_stock_adjustment)
+        f.addWidget(b)
+        l.addWidget(box)
+        self.stock_table = QTableWidget(0, 5)
+        self.stock_table.setHorizontalHeaderLabels(["Produk", "Barcode", "Stok", "Minimum", "Status"])
+        self._prepare_table(self.stock_table)
+        l.addWidget(self.stock_table, 1)
+        self.load_stock_table()
+        return w
+
     def load_stock_products(self):
-        with SessionLocal() as s:r=s.query(Product).filter_by(active=True).order_by(Product.name).all()
+        with SessionLocal() as s:
+            rows = s.query(Product).filter_by(active=True).order_by(Product.name).all()
         self.stock_product.clear()
-        for p in r:self.stock_product.addItem(f"{p.name} | {p.barcode}",p.id)
+        for p in rows:
+            self.stock_product.addItem(f"{p.name} | {p.barcode}", p.id)
+
     def save_stock_adjustment(self):
         try:
-            with SessionLocal() as s:adjust_stock(s,self.stock_product.currentData(),self.stock_qty.value(),"OPNAME",self.stock_ref.text().strip() or None)
-            self.load_stock_table();self.load_stock_products()
-        except Exception as e:QMessageBox.warning(self,"Stok",str(e))
+            if self.stock_product.currentData() is None:
+                raise ValueError("Belum ada produk aktif")
+            if self.stock_qty.value() == 0:
+                raise ValueError("Jumlah mutasi tidak boleh 0")
+            with SessionLocal() as s:
+                adjust_stock(s, self.stock_product.currentData(), self.stock_qty.value(), "OPNAME", self.stock_ref.text().strip() or None)
+            self.stock_qty.setValue(0)
+            self.stock_ref.clear()
+            self.load_stock_table()
+            self.load_stock_products()
+            QMessageBox.information(self, "Stok", "Mutasi stok berhasil disimpan.")
+        except Exception as e:
+            QMessageBox.warning(self, "Stok", str(e))
+
     def load_stock_table(self):
-        with SessionLocal() as s:r=stock_summary(s)
-        self.stock_table.setRowCount(len(r))
-        for i,x in enumerate(r):
-            for c,v in enumerate([x["name"],x["barcode"],x["stock"],x["minimum_stock"],x["status"]]):self.stock_table.setItem(i,c,QTableWidgetItem(str(v)))
+        with SessionLocal() as s:
+            rows = stock_summary(s)
+        self.stock_table.setRowCount(len(rows))
+        for i, x in enumerate(rows):
+            values = [x["name"], x["barcode"], x["stock"], x["minimum_stock"], x["status"]]
+            for c, value in enumerate(values):
+                self.stock_table.setItem(i, c, QTableWidgetItem(str(value)))
+
     def purchase_page(self):
-        w=QWidget();l=QVBoxLayout(w);f=QFormLayout();self.buy_product=QComboBox();self.buy_supplier=QComboBox();self.buy_qty=QDoubleSpinBox();self.buy_qty.setRange(.001,999999);self.buy_qty.setDecimals(3);self.buy_cost=QDoubleSpinBox();self.buy_cost.setRange(0,999999999);self.buy_invoice=QLineEdit();self.load_purchase_options()
-        for a,b in [("Produk",self.buy_product),("Supplier",self.buy_supplier),("Qty",self.buy_qty),("Harga Beli",self.buy_cost),("No. Invoice",self.buy_invoice)]:f.addRow(a,b)
-        l.addLayout(f);b=QPushButton("Simpan Pembelian & Tambah Stok");b.clicked.connect(self.save_purchase);l.addWidget(b);return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Pembelian", "Catat pembelian supplier dan otomatis tambahkan stok."))
+        box = QGroupBox("Pembelian Barang")
+        f = QFormLayout(box)
+        self.buy_product = QComboBox()
+        self.buy_supplier = QComboBox()
+        self.buy_qty = QDoubleSpinBox()
+        self.buy_qty.setRange(0.001, 999999)
+        self.buy_qty.setDecimals(3)
+        self.buy_cost = QDoubleSpinBox()
+        self.buy_cost.setRange(0, 999999999)
+        self.buy_invoice = QLineEdit()
+        self.buy_invoice.setPlaceholderText("Kosongkan untuk nomor otomatis")
+        self.load_purchase_options()
+        for a, b in [("Produk", self.buy_product), ("Supplier", self.buy_supplier), ("Qty", self.buy_qty), ("Harga Beli", self.buy_cost), ("No. Invoice", self.buy_invoice)]:
+            f.addRow(a, b)
+        l.addWidget(box)
+        b = QPushButton("Simpan Pembelian & Tambah Stok")
+        b.setObjectName("primary")
+        b.clicked.connect(self.save_purchase)
+        l.addWidget(b)
+        info = QLabel("Catatan: versi saat ini mencatat satu produk per transaksi pembelian. Multi-item akan menjadi tahap pengembangan berikutnya.")
+        info.setObjectName("pageSubtitle")
+        l.addWidget(info)
+        l.addStretch()
+        return w
+
     def load_purchase_options(self):
-        with SessionLocal() as s:p=s.query(Product).filter_by(active=True).order_by(Product.name).all();sup=s.query(Supplier).order_by(Supplier.name).all()
-        self.buy_product.clear();self.buy_supplier.clear()
-        for x in p:self.buy_product.addItem(f"{x.name} | {x.barcode}",x.id)
-        self.buy_supplier.addItem("Tanpa Supplier",None)
-        for x in sup:self.buy_supplier.addItem(x.name,x.id)
+        with SessionLocal() as s:
+            products = s.query(Product).filter_by(active=True).order_by(Product.name).all()
+            suppliers = s.query(Supplier).order_by(Supplier.name).all()
+        self.buy_product.clear()
+        self.buy_supplier.clear()
+        for p in products:
+            self.buy_product.addItem(f"{p.name} | {p.barcode}", p.id)
+        self.buy_supplier.addItem("Tanpa Supplier", None)
+        for sup in suppliers:
+            self.buy_supplier.addItem(sup.name, sup.id)
+
     def save_purchase(self):
         try:
-            inv=self.buy_invoice.text().strip() or "PB-"+datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-            with SessionLocal() as s:create_purchase(s,[{"product_id":self.buy_product.currentData(),"quantity":self.buy_qty.value(),"unit_cost":self.buy_cost.value()}],self.buy_supplier.currentData(),inv)
-            QMessageBox.information(self,"Pembelian",f"Pembelian {inv} tersimpan.");self.load_stock_table();self.load_stock_products()
-        except Exception as e:QMessageBox.warning(self,"Pembelian",str(e))
+            if self.buy_product.currentData() is None:
+                raise ValueError("Belum ada produk aktif")
+            inv = self.buy_invoice.text().strip() or "PB-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            with SessionLocal() as s:
+                create_purchase(s, [{"product_id": self.buy_product.currentData(), "quantity": self.buy_qty.value(), "unit_cost": self.buy_cost.value()}], self.buy_supplier.currentData(), inv)
+            QMessageBox.information(self, "Pembelian", f"Pembelian {inv} tersimpan dan stok bertambah.")
+            self.buy_invoice.clear()
+            self.buy_qty.setValue(1)
+            self.load_stock_table()
+            self.load_stock_products()
+            self.load_products()
+        except Exception as e:
+            QMessageBox.warning(self, "Pembelian", str(e))
+
     def cash_page(self):
-        w=QWidget();l=QVBoxLayout(w);f=QHBoxLayout();self.cash_type=QComboBox();self.cash_type.addItems(["IN","OUT"]);self.cash_amount=QDoubleSpinBox();self.cash_amount.setRange(0,999999999);self.cash_note=QLineEdit();self.cash_note.setPlaceholderText("Keterangan");f.addWidget(self.cash_type);f.addWidget(self.cash_amount);f.addWidget(self.cash_note);b=QPushButton("Simpan Kas");b.clicked.connect(self.save_cash);f.addWidget(b);l.addLayout(f);self.cash_label=QLabel();l.addWidget(self.cash_label);self.refresh_cash();return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Kas", "Kelola kas masuk dan kas keluar di luar transaksi penjualan."))
+        box = QGroupBox("Input Kas")
+        f = QHBoxLayout(box)
+        self.cash_type = QComboBox()
+        self.cash_type.addItems(["IN", "OUT"])
+        self.cash_amount = QDoubleSpinBox()
+        self.cash_amount.setRange(0, 999999999)
+        self.cash_note = QLineEdit()
+        self.cash_note.setPlaceholderText("Keterangan")
+        f.addWidget(QLabel("Jenis"))
+        f.addWidget(self.cash_type)
+        f.addWidget(QLabel("Jumlah"))
+        f.addWidget(self.cash_amount)
+        f.addWidget(self.cash_note, 2)
+        b = QPushButton("Simpan Kas")
+        b.setObjectName("primary")
+        b.clicked.connect(self.save_cash)
+        f.addWidget(b)
+        l.addWidget(box)
+        self.cash_label = QLabel()
+        self.cash_label.setObjectName("cardValue")
+        l.addWidget(self.cash_label)
+        l.addStretch()
+        self.refresh_cash()
+        return w
+
     def save_cash(self):
         try:
-            with SessionLocal() as s:record_cash_movement(s,self.cash_type.currentText(),self.cash_amount.value(),note=self.cash_note.text())
-            self.cash_amount.setValue(0);self.cash_note.clear();self.refresh_cash()
-        except Exception as e:QMessageBox.warning(self,"Kas",str(e))
+            with SessionLocal() as s:
+                record_cash_movement(s, self.cash_type.currentText(), self.cash_amount.value(), note=self.cash_note.text())
+            self.cash_amount.setValue(0)
+            self.cash_note.clear()
+            self.refresh_cash()
+            QMessageBox.information(self, "Kas", "Mutasi kas tersimpan.")
+        except Exception as e:
+            QMessageBox.warning(self, "Kas", str(e))
+
     def refresh_cash(self):
-        with SessionLocal() as s:x=cash_summary(s)
-        self.cash_label.setText(f"Kas Masuk: {money(x['cash_in'])} | Kas Keluar: {money(x['cash_out'])} | Saldo: {money(x['balance'])}")
+        with SessionLocal() as s:
+            x = cash_summary(s)
+        self.cash_label.setText(f"Kas Masuk {money(x['cash_in'])}   ·   Kas Keluar {money(x['cash_out'])}   ·   Saldo {money(x['balance'])}")
+
     def report_page(self):
-        w=QWidget();l=QVBoxLayout(w);self.report_text=QTextEdit();self.report_text.setReadOnly(True);l.addWidget(self.report_text);b=QPushButton("Refresh Laporan");b.clicked.connect(self.refresh_report);l.addWidget(b);self.refresh_report();return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Laporan", "Ringkasan penjualan, kas, stok, dan transaksi terakhir."))
+        bar = QHBoxLayout()
+        refresh = QPushButton("Refresh")
+        refresh.clicked.connect(self.refresh_report)
+        bar.addWidget(refresh)
+        reprint = QPushButton("Cetak Ulang Transaksi Terpilih")
+        reprint.clicked.connect(self.reprint_selected)
+        bar.addWidget(reprint)
+        bar.addStretch()
+        l.addLayout(bar)
+        self.report_text = QTextEdit()
+        self.report_text.setReadOnly(True)
+        l.addWidget(self.report_text, 1)
+        self.report_table = QTableWidget(0, 5)
+        self.report_table.setHorizontalHeaderLabels(["ID", "Invoice", "Tanggal", "Metode", "Total"])
+        self._prepare_table(self.report_table)
+        l.addWidget(self.report_table, 2)
+        self.refresh_report()
+        return w
+
     def refresh_report(self):
-        with SessionLocal() as s:sales=sales_summary(s);cash=cash_summary(s);stock=stock_summary(s);recent=recent_sales(s,20)
-        lines=["=== LAPORAN WPOS PRO ===",f"Transaksi: {sales['transactions']}",f"Omzet: {money(sales['omzet'])}",f"Kas masuk: {money(cash['cash_in'])}",f"Kas keluar: {money(cash['cash_out'])}",f"Saldo kas: {money(cash['balance'])}","","=== STOK ==="]
-        for r in stock:lines.append(f"{r['name']} | {r['stock']} | {r['status']}")
-        lines += ["","=== TRANSAKSI TERBARU ==="]
-        for x in recent:lines.append(f"{x.created_at:%Y-%m-%d %H:%M:%S} | {x.invoice_no} | {money(x.total)} | {x.payment_method}")
-        self.report_text.setPlainText("\n".join(lines))
+        with SessionLocal() as s:
+            sales = sales_summary(s)
+            cash = cash_summary(s)
+            stock = stock_summary(s)
+            rows = recent_sales(s, 100)
+        low = sum(1 for x in stock if x["status"] != "AMAN")
+        self.report_text.setHtml(
+            f"<h2>Ringkasan WPOS PRO</h2>"
+            f"<p><b>Transaksi:</b> {sales['transactions']} &nbsp;&nbsp; <b>Omzet:</b> {money(sales['omzet'])}</p>"
+            f"<p><b>Kas masuk:</b> {money(cash['cash_in'])} &nbsp;&nbsp; <b>Kas keluar:</b> {money(cash['cash_out'])} &nbsp;&nbsp; <b>Saldo:</b> {money(cash['balance'])}</p>"
+            f"<p><b>Produk stok perlu perhatian:</b> {low}</p>"
+        )
+        self.report_table.setRowCount(len(rows))
+        for i, sale in enumerate(rows):
+            values = [sale.id, sale.invoice_no, sale.created_at.strftime("%d/%m/%Y %H:%M:%S"), sale.payment_method, money(sale.total)]
+            for c, value in enumerate(values):
+                self.report_table.setItem(i, c, QTableWidgetItem(str(value)))
+
+    def reprint_selected(self):
+        row = self.report_table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Cetak Ulang", "Pilih transaksi terlebih dahulu.")
+            return
+        sale_id = int(self.report_table.item(row, 0).text())
+        try:
+            with SessionLocal() as s:
+                sale = s.get(Sale, sale_id)
+                if not sale:
+                    raise ValueError("Transaksi tidak ditemukan")
+                items = []
+                for item in sale.items:
+                    p = s.get(Product, item.product_id)
+                    if p:
+                        items.append({"name": p.name, "quantity": item.quantity, "unit_price": item.unit_price, "line_total": item.line_total})
+            if print_receipt(self, sale, items):
+                QMessageBox.information(self, "Cetak Ulang", "Struk berhasil dikirim ke printer.")
+        except Exception as e:
+            QMessageBox.warning(self, "Cetak Ulang", str(e))
+
     def settings_page(self):
-        w=QWidget();l=QVBoxLayout(w);f=QFormLayout();self.store_name=QLineEdit();self.store_address=QLineEdit();self.store_phone=QLineEdit();self.receipt_footer=QLineEdit()
-        for a,b in [("Nama Toko",self.store_name),("Alamat",self.store_address),("Telepon",self.store_phone),("Footer Struk",self.receipt_footer)]:f.addRow(a,b)
-        l.addLayout(f);b=QPushButton("SIMPAN PENGATURAN TOKO");b.clicked.connect(self.save_store_settings);l.addWidget(b)
-        with SessionLocal() as s:x=get_settings(s)
-        self.store_name.setText(x["store_name"]);self.store_address.setText(x["store_address"]);self.store_phone.setText(x["store_phone"]);self.receipt_footer.setText(x["receipt_footer"]);return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Pengaturan Toko", "Informasi toko yang digunakan pada struk."))
+        box = QGroupBox("Identitas Toko")
+        form = QFormLayout(box)
+        self.settings_fields = {}
+        defaults = get_settings(self._session())
+        for key, label in [("store_name", "Nama Toko"), ("store_address", "Alamat"), ("store_phone", "Telepon"), ("receipt_footer", "Footer Struk"), ("receipt_paper", "Ukuran Kertas")]:
+            if key == "receipt_paper":
+                field = QComboBox()
+                field.addItems(["58mm", "80mm"])
+                field.setCurrentText(defaults.get(key, "80mm"))
+            else:
+                field = QLineEdit(defaults.get(key, ""))
+            self.settings_fields[key] = field
+            form.addRow(label, field)
+        l.addWidget(box)
+        save = QPushButton("Simpan Pengaturan")
+        save.setObjectName("primary")
+        save.clicked.connect(self.save_store_settings)
+        l.addWidget(save)
+        l.addStretch()
+        return w
+
+    def _session(self):
+        # Helper only for loading a snapshot of settings; caller closes it immediately.
+        return _SessionContext(SessionLocal())
+
     def save_store_settings(self):
         try:
-            with SessionLocal() as s:save_settings(s,{"store_name":self.store_name.text().strip() or "TOKO SEMBAKO","store_address":self.store_address.text().strip(),"store_phone":self.store_phone.text().strip(),"receipt_footer":self.receipt_footer.text().strip()})
-            QMessageBox.information(self,"Pengaturan","Pengaturan toko berhasil disimpan.")
-        except Exception as e:QMessageBox.warning(self,"Pengaturan",str(e))
+            values = {}
+            for key, field in self.settings_fields.items():
+                values[key] = field.currentText() if isinstance(field, QComboBox) else field.text()
+            with SessionLocal() as s:
+                save_settings(s, values)
+            QMessageBox.information(self, "Pengaturan", "Pengaturan toko berhasil disimpan.")
+        except Exception as e:
+            QMessageBox.warning(self, "Pengaturan", str(e))
+
     def printer_page(self):
-        w=QWidget();l=QVBoxLayout(w);f=QFormLayout();self.printer_combo=QComboBox();self.printer_combo.addItem("Gunakan pilihan saat cetak","")
-        for n in available_printers():self.printer_combo.addItem(n,n)
-        self.paper_combo=QComboBox();self.paper_combo.addItems(["80mm","58mm"]);f.addRow("Printer",self.printer_combo);f.addRow("Ukuran Struk",self.paper_combo);l.addLayout(f);b=QPushButton("SIMPAN PENGATURAN PRINTER");b.clicked.connect(self.save_printer_settings);l.addWidget(b);b=QPushButton("TES CETAK");b.clicked.connect(self.do_test_print);l.addWidget(b)
-        with SessionLocal() as s:x=get_settings(s)
-        i=self.printer_combo.findData(x["printer_name"]);self.printer_combo.setCurrentIndex(i if i>=0 else 0);i=self.paper_combo.findText(x["receipt_paper"]);self.paper_combo.setCurrentIndex(i if i>=0 else 0);return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Printer", "Pilih printer Windows dan lakukan tes cetak."))
+        box = QGroupBox("Printer Struk")
+        f = QFormLayout(box)
+        self.printer_combo = QComboBox()
+        self.printer_combo.addItem("Printer default / pilih saat cetak", "")
+        for name in available_printers():
+            self.printer_combo.addItem(name, name)
+        settings = get_settings(self._session())
+        current = settings.get("printer_name", "")
+        idx = self.printer_combo.findData(current)
+        if idx >= 0:
+            self.printer_combo.setCurrentIndex(idx)
+        self.paper_combo = QComboBox()
+        self.paper_combo.addItems(["58mm", "80mm"])
+        self.paper_combo.setCurrentText(settings.get("receipt_paper", "80mm"))
+        f.addRow("Printer", self.printer_combo)
+        f.addRow("Kertas", self.paper_combo)
+        l.addWidget(box)
+        row = QHBoxLayout()
+        save = QPushButton("Simpan Printer")
+        save.setObjectName("primary")
+        save.clicked.connect(self.save_printer_settings)
+        test = QPushButton("Tes Cetak")
+        test.clicked.connect(lambda: test_print(self, self.printer_combo.currentData() or "", self.paper_combo.currentText()))
+        row.addWidget(save)
+        row.addWidget(test)
+        row.addStretch()
+        l.addLayout(row)
+        l.addStretch()
+        return w
+
     def save_printer_settings(self):
         try:
-            with SessionLocal() as s:save_settings(s,{"printer_name":self.printer_combo.currentData() or "","receipt_paper":self.paper_combo.currentText()})
-            QMessageBox.information(self,"Printer","Pengaturan printer berhasil disimpan.")
-        except Exception as e:QMessageBox.warning(self,"Printer",str(e))
-    def do_test_print(self):
-        try:
-            if test_print(self,self.printer_combo.currentData() or "",self.paper_combo.currentText()):QMessageBox.information(self,"Printer","Tes cetak selesai.")
-        except Exception as e:QMessageBox.warning(self,"Printer",str(e))
+            with SessionLocal() as s:
+                save_settings(s, {"printer_name": self.printer_combo.currentData() or "", "receipt_paper": self.paper_combo.currentText()})
+            QMessageBox.information(self, "Printer", "Pengaturan printer disimpan.")
+        except Exception as e:
+            QMessageBox.warning(self, "Printer", str(e))
+
     def backup_page(self):
-        w=QWidget();l=QVBoxLayout(w);l.addWidget(QLabel("<h2>Backup & Restore Database</h2>"));l.addWidget(QLabel("Backup membuat salinan konsisten SQLite. Restore mengganti database aktif dan membutuhkan restart aplikasi."));b=QPushButton("BUAT BACKUP SEKARANG");b.clicked.connect(self.do_backup);l.addWidget(b);b=QPushButton("RESTORE DARI FILE .DB");b.clicked.connect(self.do_restore);l.addWidget(b);return w
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(18, 16, 18, 18)
+        l.addWidget(self.page_header("Backup / Restore", "Amankan database lokal sebelum melakukan perubahan besar."))
+        box = QGroupBox("Database")
+        f = QVBoxLayout(box)
+        backup = QPushButton("BUAT BACKUP SEKARANG")
+        backup.setObjectName("primary")
+        backup.clicked.connect(self.do_backup)
+        restore = QPushButton("RESTORE DARI FILE")
+        restore.clicked.connect(self.do_restore)
+        note = QLabel("Backup disimpan di folder data aplikasi. Restore akan mengganti database aktif dan aplikasi harus dijalankan ulang.")
+        note.setWordWrap(True)
+        f.addWidget(backup)
+        f.addWidget(restore)
+        f.addWidget(note)
+        l.addWidget(box)
+        l.addStretch()
+        return w
+
     def do_backup(self):
         try:
-            p=backup_database();QMessageBox.information(self,"Backup",f"Backup berhasil dibuat:\n{p}")
-        except Exception as e:QMessageBox.critical(self,"Backup gagal",str(e))
+            path = backup_database()
+            QMessageBox.information(self, "Backup", f"Backup berhasil dibuat:\n{path}")
+        except Exception as e:
+            QMessageBox.warning(self, "Backup", str(e))
+
     def do_restore(self):
-        p,_=QFileDialog.getOpenFileName(self,"Pilih Backup","","Database SQLite (*.db)")
-        if not p:return
-        if QMessageBox.question(self,"Konfirmasi Restore","Restore akan mengganti database aktif. Lanjutkan?",QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
+        path, _ = QFileDialog.getOpenFileName(self, "Pilih Backup", "", "Database (*.db)")
+        if not path:
+            return
+        answer = QMessageBox.question(self, "Konfirmasi Restore", "Restore akan mengganti database aktif. Lanjutkan?")
+        if answer != QMessageBox.Yes:
+            return
         try:
-            engine.dispose();restore_database(p);QMessageBox.information(self,"Restore berhasil","Database berhasil dipulihkan. Tutup dan buka kembali WPOS PRO sebelum melanjutkan.")
-        except Exception as e:QMessageBox.critical(self,"Restore gagal",str(e))
+            engine.dispose()
+            restore_database(path)
+            QMessageBox.information(self, "Restore Berhasil", "Database berhasil dipulihkan. Tutup dan jalankan kembali WPOS PRO.")
+        except Exception as e:
+            QMessageBox.critical(self, "Restore", str(e))
+
+    def on_tab_changed(self, index):
+        title = self.tabs.tabText(index)
+        if title == "Produk" and hasattr(self, "product_table"):
+            self.load_product_options()
+            self.load_products()
+        elif title == "Stok & Mutasi" and hasattr(self, "stock_table"):
+            self.load_stock_products()
+            self.load_stock_table()
+        elif title == "Pembelian":
+            self.load_purchase_options()
+        elif title == "Kas":
+            self.refresh_cash()
+        elif title == "Laporan":
+            self.refresh_report()
+
+
+class _SessionContext:
+    """Small context-compatible settings snapshot helper."""
+    def __init__(self, session):
+        self.session = session
+
+    def __enter__(self):
+        return self.session
+
+    def __exit__(self, exc_type, exc, tb):
+        self.session.close()
