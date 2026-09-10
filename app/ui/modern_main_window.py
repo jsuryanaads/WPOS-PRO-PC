@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
@@ -136,7 +136,6 @@ class ModernMainWindow(MainWindow):
         title_box.addWidget(self.modern_context)
         title_box.addWidget(self.modern_hint)
         top_l.addLayout(title_box, 1)
-
         offline = QLabel("● OFFLINE")
         offline.setObjectName("modernStatusOffline")
         local = QLabel("DATABASE LOKAL")
@@ -220,7 +219,7 @@ class ModernMainWindow(MainWindow):
         effect = QGraphicsDropShadowEffect(widget)
         effect.setBlurRadius(blur)
         effect.setOffset(0, y)
-        effect.setColor(Qt.black)
+        effect.setColor(QColor(15, 23, 42, 28))
         widget.setGraphicsEffect(effect)
 
     def _polish_dashboard(self):
@@ -273,12 +272,6 @@ class ModernMainWindow(MainWindow):
                 button.setObjectName("dashboardSecondary")
             else:
                 button.setObjectName("dashboardGhost")
-
-        for box in dashboard.findChildren(QFrame):
-            if box.objectName() == "card":
-                continue
-            if isinstance(box, QFrame) and box.parent() is dashboard:
-                self._shadow(box, blur=12, y=2)
 
     def _apply_modern_style(self):
         self.setStyleSheet(self.styleSheet() + """
