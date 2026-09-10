@@ -26,8 +26,8 @@ Source: "dist\WPOS PRO\WPOS PRO.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\WPOS PRO\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"
-Name: "{autodesktop}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"
+Name: "{autoprograms}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"; IconFilename: "{app}\WPOS PRO.exe"; IconIndex: 0
+Name: "{autodesktop}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"; IconFilename: "{app}\WPOS PRO.exe"; IconIndex: 0
 
 [Run]
 Filename: "{app}\WPOS PRO.exe"; Description: "Jalankan WPOS PRO"; Flags: nowait postinstall skipifsilent
