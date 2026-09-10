@@ -3,7 +3,7 @@ import os
 import sys
 
 APP_NAME = "WPOS PRO"
-APP_VERSION = "V1.1.4"
+APP_VERSION = "V1.1.5"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 if getattr(sys, "frozen", False) and os.name == "nt":
