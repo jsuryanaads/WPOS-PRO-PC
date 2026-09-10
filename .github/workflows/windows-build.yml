@@ -47,7 +47,7 @@ jobs:
         shell: pwsh
         run: |
           $exe = "dist\WPOS PRO\WPOS PRO.exe"
-          $logo = "dist\WPOS PRO\assets\branding\wpos_logo.png"
+          $logo = "dist\WPOS PRO\_internal\assets\branding\wpos_logo.png"
           if (!(Test-Path $exe)) { throw "EXE tidak ditemukan: $exe" }
           if (!(Test-Path $logo)) { throw "Logo tidak ikut dipaketkan: $logo" }
           Get-Item $exe,$logo | Format-List FullName,Length
