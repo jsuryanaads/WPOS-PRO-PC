@@ -1,0 +1,64 @@
+name: WPOS PRO Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Compile Python
+        run: python -m compileall -q app
+
+      - name: Run tests
+        env:
+          PYTHONPATH: .
+        run: pytest -q
+
+      - name: Build EXE
+        run: python -m PyInstaller --clean --noconfirm --windowed --name "WPOS PRO" --paths . run.py
+
+      - name: Verify EXE
+        shell: pwsh
+        run: |
+          if (!(Test-Path "dist\WPOS PRO\WPOS PRO.exe")) { throw "WPOS PRO.exe tidak ditemukan" }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Verify installer
+        shell: pwsh
+        run: |
+          $setup = "installer\WPOS_PRO_V1.0_Setup.exe"
+          if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
+          Get-Item $setup | Format-List FullName,Length
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: WPOS-PRO-V1.0-Installer
+          path: installer/WPOS_PRO_V1.0_Setup.exe
+          if-no-files-found: error
+          retention-days: 14
