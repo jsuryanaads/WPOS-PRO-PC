@@ -77,7 +77,7 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
-      - name: Verify installer and shortcut icon
+      - name: Verify installer and shortcut configuration
         shell: pwsh
         run: |
           $setup = "installer\WPOS_PRO_V1.1.5_Setup.exe"
@@ -88,6 +88,28 @@ jobs:
           if ($iss -notmatch 'SetupIconFile=assets\\branding\\wpos_logo\.ico') { throw "SetupIconFile WPOS tidak terpasang" }
           if ($iss -notmatch 'Name: "\{autodesktop\}\\WPOS PRO"; Filename: "\{app\}\\WPOS PRO\.exe"') { throw "Shortcut desktop WPOS PRO tidak terkonfigurasi" }
           Get-Item $setup | Format-List FullName,Length
+
+      - name: Smoke install and verify desktop shortcut
+        shell: pwsh
+        run: |
+          $setup = (Resolve-Path "installer\WPOS_PRO_V1.1.5_Setup.exe").Path
+          $installDir = Join-Path $env:RUNNER_TEMP "WPOS PRO Smoke"
+          if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
+          $process = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$installDir" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Smoke install gagal, exit code $($process.ExitCode)" }
+          $installedExe = Join-Path $installDir "WPOS PRO.exe"
+          if (!(Test-Path $installedExe)) { throw "EXE hasil instalasi tidak ditemukan" }
+          $desktop = [Environment]::GetFolderPath('Desktop')
+          $shortcut = Join-Path $desktop "WPOS PRO.lnk"
+          if (!(Test-Path $shortcut)) { throw "Shortcut desktop WPOS PRO tidak dibuat" }
+          $shell = New-Object -ComObject WScript.Shell
+          $link = $shell.CreateShortcut($shortcut)
+          if ([IO.Path]::GetFullPath($link.TargetPath) -ne [IO.Path]::GetFullPath($installedExe)) { throw "Target shortcut tidak menunjuk ke WPOS PRO.exe" }
+          $iconLocation = $link.IconLocation
+          if ([string]::IsNullOrWhiteSpace($iconLocation)) { throw "Shortcut tidak memiliki IconLocation" }
+          Write-Host "Installed EXE: $installedExe"
+          Write-Host "Shortcut: $shortcut"
+          Write-Host "IconLocation: $iconLocation"
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
