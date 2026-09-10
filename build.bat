@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-echo === WPOS PRO V1.1.4 BUILD ===
+echo === WPOS PRO V1.1.5 BUILD ===
 python --version || (echo Python tidak ditemukan. & pause & exit /b 1)
 if not exist assets\branding\wpos_logo.png (echo Logo WPOS tidak ditemukan. & pause & exit /b 1)
 python -m pip install -r requirements.txt pyinstaller pillow || goto fail
