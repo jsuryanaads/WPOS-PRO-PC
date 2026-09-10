@@ -1,5 +1,4 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -34,6 +33,7 @@ class ModernMainWindow(MainWindow):
         old_tabs = self.tabs
         pages = [old_tabs.widget(i) for i in range(old_tabs.count())]
         titles = [old_tabs.tabText(i) for i in range(old_tabs.count())]
+        old_tabs.currentChanged.connect(self._legacy_navigation)
         old_tabs.setParent(None)
         for toolbar in self.findChildren(QWidget):
             if toolbar.__class__.__name__ == "QToolBar":
@@ -145,6 +145,11 @@ class ModernMainWindow(MainWindow):
             def tabText(self, index):
                 return self.titles[index]
         return CompatTabs(self, titles)
+
+    def _legacy_navigation(self, index):
+        if index < 0 or not hasattr(self, "modern_stack"):
+            return
+        self._select_navigation(index)
 
     def _select_navigation(self, page_index):
         self.modern_stack.setCurrentIndex(page_index)
