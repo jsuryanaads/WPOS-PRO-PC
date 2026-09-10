@@ -18,11 +18,9 @@ RECEIPT_PROFILE = {
     "margin_mm": 5.0,
     "font_size_pt": 9,
     "cpl_hint": 32,
+    "bottom_feed_lines": 6,
 }
 
-# ESC/POS: on Windows RAW mode lets the thermal printer control the roll feed
-# and cutter. This avoids the Windows continuous form (e.g. 58 x 3276 mm)
-# becoming the physical receipt length.
 ESC = b"\x1b"
 GS = b"\x1d"
 CMD_INIT = ESC + b"@"
@@ -30,7 +28,6 @@ CMD_ALIGN_LEFT = ESC + b"a\x00"
 CMD_ALIGN_CENTER = ESC + b"a\x01"
 CMD_BOLD_ON = ESC + b"E\x01"
 CMD_BOLD_OFF = ESC + b"E\x00"
-CMD_FEED_3 = ESC + b"d\x03"
 CMD_CUT = GS + b"V\x00"
 
 
@@ -40,22 +37,8 @@ def available_printers():
 
 def _configure_receipt_page(printer, height_mm):
     profile = RECEIPT_PROFILE
-    page_size = QPageSize(
-        QSizeF(profile["paper_width_mm"], max(1.0, float(height_mm))),
-        QPageSize.Millimeter,
-        "WPOS 58mm Receipt",
-    )
-    layout = QPageLayout(
-        page_size,
-        QPageLayout.Portrait,
-        QMarginsF(
-            profile["margin_mm"],
-            profile["margin_mm"],
-            profile["margin_mm"],
-            profile["margin_mm"],
-        ),
-        QPageLayout.Millimeter,
-    )
+    page_size = QPageSize(QSizeF(profile["paper_width_mm"], max(1.0, float(height_mm))), QPageSize.Millimeter, "WPOS 58mm Receipt")
+    layout = QPageLayout(page_size, QPageLayout.Portrait, QMarginsF(profile["margin_mm"], profile["margin_mm"], profile["margin_mm"], profile["margin_mm"]), QPageLayout.Millimeter)
     printer.setPageLayout(layout)
     printer.setResolution(203)
     printer.setFullPage(False)
@@ -82,10 +65,7 @@ def receipt_html(sale, items, settings):
         qty = item["quantity"]
         price = Decimal(str(item["unit_price"]))
         line = Decimal(str(item["line_total"]))
-        rows.append(
-            f"<tr><td colspan='2'>{name}</td></tr>"
-            f"<tr><td>{qty} x {price:,.0f}</td><td align='right'>{line:,.0f}</td></tr>"
-        )
+        rows.append(f"<tr><td colspan='2'>{name}</td></tr><tr><td>{qty} x {price:,.0f}</td><td align='right'>{line:,.0f}</td></tr>")
     address = escape(str(settings.get("store_address", "")))
     phone = escape(str(settings.get("store_phone", "")))
     store_name = escape(str(settings.get("store_name", "TOKO SEMBAKO")))
@@ -121,10 +101,7 @@ def printer_test_html(settings, invoice_no="INV-00001"):
     rows = []
     for name, qty, price in items:
         subtotal = qty * price
-        rows.append(
-            f"<tr><td class='name'>{escape(name)}</td><td class='qty'>{qty}</td>"
-            f"<td class='price'>x {price:,.0f}</td><td class='amount'>{subtotal:,.0f}</td></tr>"
-        )
+        rows.append(f"<tr><td class='name'>{escape(name)}</td><td class='qty'>{qty}</td><td class='price'>x {price:,.0f}</td><td class='amount'>{subtotal:,.0f}</td></tr>")
     return f"""
     <html><head><style>
     body {{ width:48mm; font-family:'Courier New',monospace; font-size:9pt; margin:0; padding:0; color:#000; }}
@@ -205,9 +182,9 @@ def _escpos_receipt_bytes(store_name, address, phone, invoice_no, created_at, it
     out += CMD_ALIGN_CENTER
     for line in _fit_line(footer, width):
         out += _escpos_line(line)
-    # Only a small controlled feed is added before the cutter. No fixed page
-    # height is sent to Windows, so the roll stops after the receipt content.
-    out += CMD_ALIGN_LEFT + CMD_FEED_3 + CMD_CUT
+    # Give a comfortable lower margin before cutting. Six normal feed lines
+    # provide roughly 7-12 mm depending on the printer's configured line pitch.
+    out += CMD_ALIGN_LEFT + ESC + b"d" + bytes([RECEIPT_PROFILE["bottom_feed_lines"]]) + CMD_CUT
     return bytes(out)
 
 
@@ -223,11 +200,7 @@ def _windows_raw_print(printer_name, data, job_name="WPOS PRO Receipt"):
         return False
 
     class DOC_INFO_1(ctypes.Structure):
-        _fields_ = [
-            ("pDocName", wintypes.LPWSTR),
-            ("pOutputFile", wintypes.LPWSTR),
-            ("pDatatype", wintypes.LPWSTR),
-        ]
+        _fields_ = [("pDocName", wintypes.LPWSTR), ("pOutputFile", wintypes.LPWSTR), ("pDatatype", wintypes.LPWSTR)]
 
     doc = DOC_INFO_1(job_name, None, "RAW")
     started = False
@@ -262,21 +235,7 @@ def _raw_print_sale(printer_name, sale, items, settings):
     printer_name = _selected_printer_name(printer_name or settings.get("printer_name", ""))
     if not printer_name:
         return False
-    data = _escpos_receipt_bytes(
-        settings.get("store_name", "TOKO SEMBAKO"),
-        settings.get("store_address", ""),
-        settings.get("store_phone", ""),
-        sale.invoice_no,
-        sale.created_at,
-        items,
-        sale.subtotal,
-        sale.discount,
-        sale.total,
-        sale.payment_method,
-        sale.paid,
-        sale.change,
-        settings.get("receipt_footer", "Terima kasih"),
-    )
+    data = _escpos_receipt_bytes(settings.get("store_name", "TOKO SEMBAKO"), settings.get("store_address", ""), settings.get("store_phone", ""), sale.invoice_no, sale.created_at, items, sale.subtotal, sale.discount, sale.total, sale.payment_method, sale.paid, sale.change, settings.get("receipt_footer", "Terima kasih"))
     return _windows_raw_print(printer_name, data, f"WPOS PRO {sale.invoice_no}")
 
 
@@ -289,21 +248,7 @@ def _raw_print_test(printer_name, settings):
         {"name": "Indomie", "quantity": Decimal("2"), "unit_price": Decimal("3500"), "line_total": Decimal("7000")},
         {"name": "Teh", "quantity": Decimal("1"), "unit_price": Decimal("5000"), "line_total": Decimal("5000")},
     ]
-    data = _escpos_receipt_bytes(
-        settings.get("store_name", "TOKO SEMBAKO"),
-        settings.get("store_address", "Alamat toko") or "Alamat toko",
-        settings.get("store_phone", ""),
-        "INV-00001",
-        now,
-        items,
-        Decimal("12000"),
-        Decimal("0"),
-        Decimal("12000"),
-        "CASH",
-        Decimal("20000"),
-        Decimal("8000"),
-        settings.get("receipt_footer", "Terima kasih") or "Terima kasih",
-    )
+    data = _escpos_receipt_bytes(settings.get("store_name", "TOKO SEMBAKO"), settings.get("store_address", "Alamat toko") or "Alamat toko", settings.get("store_phone", ""), "INV-00001", now, items, Decimal("12000"), Decimal("0"), Decimal("12000"), "CASH", Decimal("20000"), Decimal("8000"), settings.get("receipt_footer", "Terima kasih") or "Terima kasih")
     return _windows_raw_print(printer_name, data, "WPOS PRO TEST PRINT")
 
 
@@ -340,7 +285,6 @@ def test_print(parent, printer_name="", paper="58mm"):
     with SessionLocal() as session:
         settings = get_settings(session)
     if os.name == "nt":
-        # paper remains only for API compatibility; WPOS is 58 mm only.
         return _raw_print_test(printer_name, settings)
     document = _render_document(printer_test_html(settings))
     printer = QPrinter(QPrinter.HighResolution)
