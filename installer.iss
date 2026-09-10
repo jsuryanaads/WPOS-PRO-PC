@@ -22,7 +22,7 @@ UninstallDisplayName=WPOS PRO V1.0
 
 [Files]
 Source: "dist\WPOS PRO\WPOS PRO.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\WPOS PRO\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\WPOS PRO\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"
