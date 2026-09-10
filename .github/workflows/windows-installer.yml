@@ -70,23 +70,23 @@ jobs:
       - name: Verify installer
         shell: pwsh
         run: |
-          $setup = "installer\WPOS_PRO_V1.1.4_Setup.exe"
+          $setup = "installer\WPOS_PRO_V1.1.5_Setup.exe"
           if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
           Get-Item $setup | Format-List FullName,Length
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WPOS-PRO-V1.1.4-Installer
-          path: installer/WPOS_PRO_V1.1.4_Setup.exe
+          name: WPOS-PRO-V1.1.5-Installer
+          path: installer/WPOS_PRO_V1.1.5_Setup.exe
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish V1.1.4 release asset
+      - name: Publish V1.1.5 release asset
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create V1.1.4 --title "V1.1.4" --notes "WPOS PRO V1.1.4 — Branded Windows application icon" 2>$null
+          gh release create V1.1.5 --title "V1.1.5" --notes "WPOS PRO V1.1.5 — stabilized modern UI, Qt6 compatibility, and branded Windows icon" 2>$null
           if ($LASTEXITCODE -ne 0) { $LASTEXITCODE = 0 }
-          gh release upload V1.1.4 installer/WPOS_PRO_V1.1.4_Setup.exe --clobber
+          gh release upload V1.1.5 installer/WPOS_PRO_V1.1.5_Setup.exe --clobber
