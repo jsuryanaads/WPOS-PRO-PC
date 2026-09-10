@@ -9,7 +9,7 @@ from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
 from .ui.ux2026 import apply_ux2026
-from .ui.themes import THEMES, apply_theme, current_theme, set_theme
+from .ui.themes import apply_theme, current_theme
 
 
 def main():
@@ -17,6 +17,8 @@ def main():
     app = QApplication(sys.argv)
     if LOGO_PATH.exists():
         app.setWindowIcon(QIcon(str(LOGO_PATH)))
+    # Keep the existing theme infrastructure for compatibility, but do not
+    # expose theme switching in the application menu for V1.1.5.
     apply_theme(app, current_theme())
     holder = {}
 
@@ -24,16 +26,6 @@ def main():
         apply_ui_polish(window)
         window._apply_modern_style()
         apply_ux2026(window)
-
-    def change_theme(key, menu, window):
-        set_theme(key)
-        apply_theme(app, key)
-        refresh_ui(window)
-        for action in menu.actions():
-            action.setChecked(action.text() == THEMES[key]["label"])
-        window.statusBar().showMessage(
-            f"WPOS PRO {APP_VERSION}  |  {window.user.username}  |  {window.user.role}  |  Tema: {THEMES[key]['label']}"
-        )
 
     def success(user):
         def logout_callback(window):
@@ -49,14 +41,9 @@ def main():
         refresh_ui(window)
         holder["main"] = window
 
-        theme_menu = window.menuBar().addMenu("Tema")
-        selected = current_theme()
-        for key, info in THEMES.items():
-            action = theme_menu.addAction(info["label"])
-            action.setCheckable(True)
-            action.setChecked(key == selected)
-            action.triggered.connect(lambda checked=False, k=key: change_theme(k, theme_menu, window))
-
+        # V1.1.5: theme switching is intentionally hidden for now.
+        # The underlying theme service remains intact to avoid unnecessary
+        # changes to the existing styling pipeline.
         if str(user.role).upper() == "ADMIN":
             menu = window.menuBar().addMenu("Administrasi")
             action = menu.addAction("Manajemen User")
