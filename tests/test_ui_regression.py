@@ -64,26 +64,15 @@ def test_premium_cashier_replaces_blank_legacy_page(qapp):
     assert harness.paid is not None
 
 
-def test_modern_page_surface_rules_are_present():
+def test_modern_page_surface_rules_are_present(qapp):
     from app.ui.ux2026 import apply_ux2026
 
-    class Window:
-        def __init__(self):
-            self._style = ""
-
-        def setAttribute(self, *_args):
+    class TabsStub:
+        def setCurrentIndex(self, _index):
             pass
 
-        def findChildren(self, *_args):
-            return []
-
-        def styleSheet(self):
-            return self._style
-
-        def setStyleSheet(self, value):
-            self._style = value
-
-    window = Window()
+    window = QWidget()
+    window.tabs = TabsStub()
     apply_ux2026(window)
     assert "QWidget#modernStack > QWidget" in window.styleSheet()
     assert "background: #f8fafc" in window.styleSheet()
