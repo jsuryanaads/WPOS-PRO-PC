@@ -16,7 +16,14 @@ def get_setting(session, key, default=""):
 
 
 def get_settings(session):
-    return {key: get_setting(session, key, default) for key, default in DEFAULT_SETTINGS.items()}
+    """Return a settings snapshot and support the UI's short-lived session wrapper."""
+    wrapper = getattr(session, "session", None)
+    actual = wrapper if wrapper is not None else session
+    try:
+        return {key: get_setting(actual, key, default) for key, default in DEFAULT_SETTINGS.items()}
+    finally:
+        if wrapper is not None and hasattr(session, "close"):
+            session.close()
 
 
 def set_setting(session, key, value):
