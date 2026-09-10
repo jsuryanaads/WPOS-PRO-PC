@@ -63,7 +63,8 @@ jobs:
           $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Resolve-Path $exe).Path)
           if ($null -eq $icon) { throw "Windows EXE tidak memiliki associated icon resource" }
           $iconOut = Join-Path $env:TEMP "wpos-pro-extracted.ico"
-          $icon.Save($iconOut)
+          $stream = [System.IO.File]::Open($iconOut, [System.IO.FileMode]::Create)
+          try { $icon.Save($stream) } finally { $stream.Dispose(); $icon.Dispose() }
           if (!(Test-Path $iconOut) -or (Get-Item $iconOut).Length -lt 100) { throw "Icon resource EXE tidak valid" }
           Get-Item $exe, $logo, $iconOut | Format-List FullName,Length
 
