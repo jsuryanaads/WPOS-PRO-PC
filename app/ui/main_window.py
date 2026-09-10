@@ -3,16 +3,17 @@ from decimal import Decimal
 from PySide6.QtWidgets import (
     QMainWindow, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
     QPushButton, QLabel, QDoubleSpinBox, QComboBox, QTableWidget,
-    QTableWidgetItem, QFormLayout, QMessageBox, QTextEdit
+    QTableWidgetItem, QFormLayout, QMessageBox, QTextEdit, QFileDialog
 )
-from ..database import SessionLocal
-from ..models import Product, Sale, Supplier, StockMovement, CashMovement
+from ..database import SessionLocal, engine
+from ..models import Product, Sale, Supplier
 from ..services.sales import create_sale
 from ..services.products import create_product, update_product, deactivate_product
 from ..services.stock import adjust_stock
 from ..services.purchases import create_purchase
 from ..services.cash import record_cash_movement
 from ..services.reports import sales_summary, low_stock_count, cash_summary, stock_summary, recent_sales
+from ..services.backup import backup_database, restore_database
 from .master_data import category_page, unit_page, supplier_page, customer_page
 
 
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(self.purchase_page(), "Pembelian")
         tabs.addTab(self.cash_page(), "Kas")
         tabs.addTab(self.report_page(), "Laporan")
+        tabs.addTab(self.backup_page(), "Backup / Restore")
         tabs.addTab(category_page(), "Kategori")
         tabs.addTab(unit_page(), "Satuan")
         tabs.addTab(supplier_page(), "Supplier")
@@ -46,13 +48,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(QLabel(f"<h1>WPOS PRO</h1>Login: {self.user.username} ({self.user.role})"))
         with SessionLocal() as s:
             summary = sales_summary(s); low = low_stock_count(s); products = s.query(Product).count(); cash = cash_summary(s)
-        for text in [
-            f"Transaksi: {summary['transactions']}",
-            f"Produk: {products}",
-            f"Stok menipis/habis: {low}",
-            f"Omzet: {money(summary['omzet'])}",
-            f"Saldo kas: {money(cash['balance'])}",
-        ]: layout.addWidget(QLabel(text))
+        for text in [f"Transaksi: {summary['transactions']}", f"Produk: {products}", f"Stok menipis/habis: {low}", f"Omzet: {money(summary['omzet'])}", f"Saldo kas: {money(cash['balance'])}"]:
+            layout.addWidget(QLabel(text))
         return w
 
     def cashier(self):
@@ -76,9 +73,7 @@ class MainWindow(QMainWindow):
         with SessionLocal() as s:
             product = s.query(Product).filter_by(barcode=code, active=True).first()
             if not product: QMessageBox.warning(self, "Produk", "Barcode tidak ditemukan."); return
-            qty = Decimal(str(self.qty.value()))
-            existing = next((x for x in self.cart if x["product_id"] == product.id), None)
-            current = existing["quantity"] if existing else Decimal("0")
+            qty = Decimal(str(self.qty.value())); existing = next((x for x in self.cart if x["product_id"] == product.id), None); current = existing["quantity"] if existing else Decimal("0")
             if current + qty > Decimal(str(product.stock)): QMessageBox.warning(self, "Stok", "Stok tidak mencukupi."); return
         if existing: existing["quantity"] += qty
         else: self.cart.append({"product_id": product.id, "quantity": qty})
@@ -129,13 +124,13 @@ class MainWindow(QMainWindow):
 
     def select_product(self, row, _column):
         self.selected_product_id = int(self.product_table.item(row, 0).text())
-        self.p_barcode.setText(self.product_table.item(row, 1).text()); self.p_name.setText(self.product_table.item(row, 2).text())
-        self.p_buy.setValue(float(self.product_table.item(row, 3).text())); self.p_sell.setValue(float(self.product_table.item(row, 4).text())); self.p_min.setValue(0)
+        with SessionLocal() as s: p = s.get(Product, self.selected_product_id)
+        if not p: return
+        self.p_barcode.setText(p.barcode); self.p_name.setText(p.name); self.p_buy.setValue(float(p.purchase_price)); self.p_sell.setValue(float(p.selling_price)); self.p_min.setValue(float(p.minimum_stock)); self.p_stock.setValue(float(p.stock))
 
     def save_product(self):
         try:
-            with SessionLocal() as s:
-                create_product(s, self.p_barcode.text(), self.p_name.text(), self.p_buy.value(), self.p_sell.value(), self.p_stock.value(), self.p_min.value())
+            with SessionLocal() as s: create_product(s, self.p_barcode.text(), self.p_name.text(), self.p_buy.value(), self.p_sell.value(), self.p_stock.value(), self.p_min.value())
             self.load_products(); self.clear_product_form()
         except Exception as exc: QMessageBox.warning(self, "Produk", str(exc))
 
@@ -156,7 +151,7 @@ class MainWindow(QMainWindow):
         except Exception as exc: QMessageBox.warning(self, "Produk", str(exc))
 
     def clear_product_form(self):
-        self.p_barcode.clear(); self.p_name.clear(); self.p_buy.setValue(0); self.p_sell.setValue(0); self.p_stock.setValue(0); self.p_min.setValue(0)
+        self.p_barcode.clear(); self.p_name.clear(); self.p_buy.setValue(0); self.p_sell.setValue(0); self.p_stock.setValue(0); self.p_min.setValue(0); self.selected_product_id = None
 
     def stock_page(self):
         w = QWidget(); layout = QVBoxLayout(w); form = QHBoxLayout()
@@ -225,8 +220,35 @@ class MainWindow(QMainWindow):
     def refresh_report(self):
         with SessionLocal() as s:
             sales = sales_summary(s); cash = cash_summary(s); stock = stock_summary(s); recent = recent_sales(s, 20)
-        lines = ["=== LAPORAN WPOS PRO ===", f"Transaksi: {sales['transactions']}", f"Omzet: {money(sales['omzet'])}", f"Kas masuk: {money(cash['cash_in'])}", f"Kas keluar: {money(cash['cash_out'])}", f"Saldo kas: {money(cash['balance'])}", "", "=== STOK ==="]
+        lines = ["=== LAPORAN WPOS PRO ===", f"Transaksi: {sales['transactions']}", f"Omzet: {money(sales['omzet'])}", f"Kas masuk: {money(cash['cash_in'])}", f"Kas keluar: {money(cash['cash_out'])}", f"Saldo kas: {money(cash['balance'])", "", "=== STOK ==="]
         for r in stock: lines.append(f"{r['name']} | {r['stock']} | {r['status']}")
         lines += ["", "=== TRANSAKSI TERBARU ==="]
         for x in recent: lines.append(f"{x.created_at:%Y-%m-%d %H:%M:%S} | {x.invoice_no} | {money(x.total)} | {x.payment_method}")
         self.report_text.setPlainText("\n".join(lines))
+
+    def backup_page(self):
+        w = QWidget(); layout = QVBoxLayout(w)
+        layout.addWidget(QLabel("<h2>Backup & Restore Database</h2>"))
+        layout.addWidget(QLabel("Backup membuat salinan konsisten SQLite. Restore mengganti database aktif dan membutuhkan restart aplikasi."))
+        backup_btn = QPushButton("BUAT BACKUP SEKARANG"); backup_btn.clicked.connect(self.do_backup); layout.addWidget(backup_btn)
+        restore_btn = QPushButton("RESTORE DARI FILE .DB"); restore_btn.clicked.connect(self.do_restore); layout.addWidget(restore_btn)
+        return w
+
+    def do_backup(self):
+        try:
+            path = backup_database()
+            QMessageBox.information(self, "Backup", f"Backup berhasil dibuat:\n{path}")
+        except Exception as exc:
+            QMessageBox.critical(self, "Backup gagal", str(exc))
+
+    def do_restore(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Pilih Backup", "", "Database SQLite (*.db)")
+        if not path: return
+        answer = QMessageBox.question(self, "Konfirmasi Restore", "Restore akan mengganti database aktif. Lanjutkan?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if answer != QMessageBox.Yes: return
+        try:
+            engine.dispose()
+            restore_database(path)
+            QMessageBox.information(self, "Restore berhasil", "Database berhasil dipulihkan. Tutup dan buka kembali WPOS PRO sebelum melanjutkan.")
+        except Exception as exc:
+            QMessageBox.critical(self, "Restore gagal", str(exc))
