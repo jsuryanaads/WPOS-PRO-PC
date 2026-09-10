@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from PySide6.QtWidgets import (QMainWindow,QTabWidget,QWidget,QVBoxLayout,QHBoxLayout,QLineEdit,QPushButton,QLabel,QDoubleSpinBox,QComboBox,QTableWidget,QTableWidgetItem,QFormLayout,QMessageBox,QTextEdit,QFileDialog)
 from ..database import SessionLocal, engine
-from ..models import Product, Supplier
+from ..models import Product, Supplier, Category, Unit
 from ..services.sales import create_sale
 from ..services.products import create_product, update_product, deactivate_product
 from ..services.stock import adjust_stock
@@ -62,30 +62,37 @@ class MainWindow(QMainWindow):
             print_receipt(self,sale,items); QMessageBox.information(self,"Berhasil",f"{sale.invoice_no}\nTotal {money(sale.total)}\nKembalian {money(sale.change)}"); self.clear_cart()
         except Exception as exc:QMessageBox.critical(self,"Transaksi gagal",str(exc))
     def products(self):
-        w=QWidget(); l=QVBoxLayout(w); f=QFormLayout(); self.p_barcode=QLineEdit(); self.p_name=QLineEdit(); self.p_buy=QDoubleSpinBox(); self.p_sell=QDoubleSpinBox(); self.p_stock=QDoubleSpinBox(); self.p_min=QDoubleSpinBox();
+        w=QWidget(); l=QVBoxLayout(w); f=QFormLayout(); self.p_barcode=QLineEdit(); self.p_name=QLineEdit(); self.p_category=QComboBox(); self.p_unit=QComboBox(); self.p_buy=QDoubleSpinBox(); self.p_sell=QDoubleSpinBox(); self.p_stock=QDoubleSpinBox(); self.p_min=QDoubleSpinBox(); self.load_product_options()
         for x in (self.p_buy,self.p_sell):x.setRange(0,999999999)
         for x in (self.p_stock,self.p_min):x.setRange(0,999999999);x.setDecimals(3)
-        for a,b in [("Barcode",self.p_barcode),("Nama",self.p_name),("Harga Beli",self.p_buy),("Harga Jual",self.p_sell),("Stok Awal",self.p_stock),("Stok Minimum",self.p_min)]:f.addRow(a,b)
-        l.addLayout(f); bs=QHBoxLayout(); b=QPushButton("Tambah Produk"); b.clicked.connect(self.save_product); bs.addWidget(b); b=QPushButton("Edit Terpilih"); b.clicked.connect(self.edit_product); bs.addWidget(b); b=QPushButton("Nonaktifkan"); b.clicked.connect(self.deactivate_selected); bs.addWidget(b); l.addLayout(bs); self.product_table=QTableWidget(0,6); self.product_table.setHorizontalHeaderLabels(["ID","Barcode","Nama","Beli","Jual","Stok"]); self.product_table.cellClicked.connect(self.select_product); l.addWidget(self.product_table); self.load_products(); return w
+        for a,b in [("Barcode",self.p_barcode),("Nama",self.p_name),("Kategori",self.p_category),("Satuan",self.p_unit),("Harga Beli",self.p_buy),("Harga Jual",self.p_sell),("Stok Awal",self.p_stock),("Stok Minimum",self.p_min)]:f.addRow(a,b)
+        l.addLayout(f); bs=QHBoxLayout(); b=QPushButton("Tambah Produk"); b.clicked.connect(self.save_product); bs.addWidget(b); b=QPushButton("Edit Terpilih"); b.clicked.connect(self.edit_product); bs.addWidget(b); b=QPushButton("Nonaktifkan"); b.clicked.connect(self.deactivate_selected); bs.addWidget(b); l.addLayout(bs); self.product_table=QTableWidget(0,8); self.product_table.setHorizontalHeaderLabels(["ID","Barcode","Nama","Kategori","Satuan","Beli","Jual","Stok"]); l.addWidget(self.product_table); self.product_table.cellClicked.connect(self.select_product); self.load_products(); return w
+    def load_product_options(self):
+        with SessionLocal() as s:cats=s.query(Category).filter_by(active=True).order_by(Category.name).all(); units=s.query(Unit).order_by(Unit.name).all()
+        self.p_category.clear(); self.p_unit.clear(); self.p_category.addItem("Tanpa Kategori",None); self.p_unit.addItem("Tanpa Satuan",None)
+        for x in cats:self.p_category.addItem(x.name,x.id)
+        for x in units:self.p_unit.addItem(x.name,x.id)
     def load_products(self):
-        with SessionLocal() as s:r=s.query(Product).order_by(Product.name).all()
+        with SessionLocal() as s:r=s.query(Product).order_by(Product.name).all(); cats={x.id:x.name for x in s.query(Category).all()}; units={x.id:x.name for x in s.query(Unit).all()}
         self.product_table.setRowCount(len(r))
         for i,p in enumerate(r):
-            for c,v in enumerate([p.id,p.barcode,p.name,p.purchase_price,p.selling_price,p.stock]):self.product_table.setItem(i,c,QTableWidgetItem(str(v)))
+            for c,v in enumerate([p.id,p.barcode,p.name,cats.get(p.category_id,""),units.get(p.unit_id,""),p.purchase_price,p.selling_price,p.stock]):self.product_table.setItem(i,c,QTableWidgetItem(str(v)))
     def select_product(self,row,_):
         self.selected_product_id=int(self.product_table.item(row,0).text())
         with SessionLocal() as s:p=s.get(Product,self.selected_product_id)
-        if p:self.p_barcode.setText(p.barcode);self.p_name.setText(p.name);self.p_buy.setValue(float(p.purchase_price));self.p_sell.setValue(float(p.selling_price));self.p_min.setValue(float(p.minimum_stock));self.p_stock.setValue(float(p.stock))
+        if p:
+            self.p_barcode.setText(p.barcode);self.p_name.setText(p.name);self.p_buy.setValue(float(p.purchase_price));self.p_sell.setValue(float(p.selling_price));self.p_min.setValue(float(p.minimum_stock));self.p_stock.setValue(float(p.stock))
+            self.p_category.setCurrentIndex(self.p_category.findData(p.category_id)); self.p_unit.setCurrentIndex(self.p_unit.findData(p.unit_id))
     def save_product(self):
         try:
-            with SessionLocal() as s:create_product(s,self.p_barcode.text(),self.p_name.text(),self.p_buy.value(),self.p_sell.value(),self.p_stock.value(),self.p_min.value())
+            with SessionLocal() as s:create_product(s,self.p_barcode.text(),self.p_name.text(),self.p_buy.value(),self.p_sell.value(),self.p_stock.value(),self.p_min.value(),self.p_category.currentData(),self.p_unit.currentData())
             self.load_products();self.clear_product_form()
         except Exception as e:QMessageBox.warning(self,"Produk",str(e))
     def edit_product(self):
         try:
             pid=getattr(self,"selected_product_id",None)
             if not pid:raise ValueError("Pilih produk terlebih dahulu")
-            with SessionLocal() as s:update_product(s,pid,barcode=self.p_barcode.text(),name=self.p_name.text(),purchase_price=self.p_buy.value(),selling_price=self.p_sell.value(),minimum_stock=self.p_min.value())
+            with SessionLocal() as s:update_product(s,pid,barcode=self.p_barcode.text(),name=self.p_name.text(),purchase_price=self.p_buy.value(),selling_price=self.p_sell.value(),minimum_stock=self.p_min.value(),category_id=self.p_category.currentData(),unit_id=self.p_unit.currentData())
             self.load_products();QMessageBox.information(self,"Produk","Produk diperbarui.")
         except Exception as e:QMessageBox.warning(self,"Produk",str(e))
     def deactivate_selected(self):
@@ -95,7 +102,7 @@ class MainWindow(QMainWindow):
             with SessionLocal() as s:deactivate_product(s,pid)
             self.load_products()
         except Exception as e:QMessageBox.warning(self,"Produk",str(e))
-    def clear_product_form(self):self.p_barcode.clear();self.p_name.clear();self.p_buy.setValue(0);self.p_sell.setValue(0);self.p_stock.setValue(0);self.p_min.setValue(0);self.selected_product_id=None
+    def clear_product_form(self):self.p_barcode.clear();self.p_name.clear();self.p_buy.setValue(0);self.p_sell.setValue(0);self.p_stock.setValue(0);self.p_min.setValue(0);self.p_category.setCurrentIndex(0);self.p_unit.setCurrentIndex(0);self.selected_product_id=None
     def stock_page(self):
         w=QWidget();l=QVBoxLayout(w);f=QHBoxLayout();self.stock_product=QComboBox();self.stock_qty=QDoubleSpinBox();self.stock_qty.setRange(-999999,999999);self.stock_qty.setDecimals(3);self.stock_ref=QLineEdit();self.stock_ref.setPlaceholderText("Referensi/opname");self.load_stock_products();f.addWidget(self.stock_product);f.addWidget(self.stock_qty);f.addWidget(self.stock_ref);b=QPushButton("Simpan Mutasi");b.clicked.connect(self.save_stock_adjustment);f.addWidget(b);l.addLayout(f);self.stock_table=QTableWidget(0,5);self.stock_table.setHorizontalHeaderLabels(["Produk","Barcode","Stok","Minimum","Status"]);l.addWidget(self.stock_table);self.load_stock_table();return w
     def load_stock_products(self):
