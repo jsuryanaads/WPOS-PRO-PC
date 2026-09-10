@@ -64,71 +64,79 @@ THEMES = {
     "KEMERDEKAAN": {
         "label": "Kemerdekaan",
         "stylesheet": COMMON + """
-            QWidget { background: #fafafa; color: #262626; font-family: 'Segoe UI'; }
-            QMainWindow, QDialog { background: #fafafa; }
-            QMenuBar { background: #ffffff; color: #262626; border-bottom: 2px solid #d14343; }
-            QMenuBar::item:selected, QMenu::item:selected { background: #fff1f1; color: #a51d1d; }
-            QMenu { background: #ffffff; color: #262626; border: 1px solid #e5e5e5; }
-            QTabWidget::pane { border: 0; background: #fafafa; }
-            QTabBar { background: #fff5f5; }
-            QTabBar::tab { background: #fff5f5; color: #7f1d1d; padding: 10px 16px; border: 0; }
-            QTabBar::tab:selected { background: #ffffff; color: #b42323; border-bottom: 3px solid #d14343; }
-            QPushButton { background: #c84a4a; color: white; border: 0; border-radius: 7px; padding: 8px 14px; font-weight: 700; }
-            QPushButton:hover { background: #ad3939; }
-            QPushButton#primary { background: #c43f3f; }
-            QPushButton#danger { background: #9f2f2f; }
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: white; color: #262626; border: 1px solid #d6d6d6; border-radius: 6px; padding: 6px; }
-            QTableWidget, QListWidget { background: white; color: #262626; border: 1px solid #e0e0e0; border-radius: 8px; alternate-background-color: #fffafa; }
-            QHeaderView::section { background: #f8e5e5; color: #8f1d1d; padding: 8px; border: 0; font-weight: 700; }
-            QGroupBox { background: white; border: 1px solid #e6d5d5; border-radius: 9px; margin-top: 10px; padding: 12px 8px 8px; font-weight: 700; }
-            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; background: #fafafa; color: #a51d1d; }
-            QFrame#brandStrip { background: #b93434; }
+            QWidget { background: #f0e8e8; color: #2b2020; font-family: 'Segoe UI'; }
+            QMainWindow, QDialog { background: #f0e8e8; }
+            QMenuBar { background: #7f1d1d; color: #fff7f7; border-bottom: 2px solid #c43f3f; }
+            QMenuBar::item:selected { background: #a52b2b; color: #ffffff; }
+            QMenu { background: #7f1d1d; color: #ffffff; border: 1px solid #b23a3a; }
+            QMenu::item:selected { background: #b93434; color: #ffffff; }
+            QTabWidget::pane { border: 0; background: #f0e8e8; }
+            QTabBar { background: #8f2525; }
+            QTabBar::tab { background: #8f2525; color: #ffe8e8; padding: 10px 16px; border: 0; }
+            QTabBar::tab:hover { background: #a52b2b; color: #ffffff; }
+            QTabBar::tab:selected { background: #f7eeee; color: #8f1d1d; border-bottom: 3px solid #d14343; }
+            QPushButton { background: #a52f2f; color: #ffffff; border: 0; border-radius: 7px; padding: 8px 14px; font-weight: 700; }
+            QPushButton:hover { background: #8f2525; }
+            QPushButton:disabled { background: #c9aaaa; color: #f7eeee; }
+            QPushButton#primary { background: #b93434; }
+            QPushButton#danger { background: #7f1d1d; }
+            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #fff7f7; color: #2b2020; border: 1px solid #d7b8b8; border-radius: 6px; padding: 6px; }
+            QTableWidget, QListWidget { background: #fff7f7; color: #2b2020; border: 1px solid #d7b8b8; border-radius: 8px; alternate-background-color: #f7e9e9; }
+            QHeaderView::section { background: #c43f3f; color: #ffffff; padding: 8px; border: 0; font-weight: 700; }
+            QGroupBox { background: #f8eeee; border: 1px solid #d7b8b8; border-radius: 9px; margin-top: 10px; padding: 12px 8px 8px; font-weight: 700; }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; background: #f0e8e8; color: #8f1d1d; }
+            QFrame#brandStrip { background: #9f2929; }
             QLabel#brandName, QLabel#brandVersion { color: white; }
-            QLabel#cardTitle { color: #7b6262; }
+            QLabel#cardTitle { color: #7f4545; }
             QLabel#cardValue { color: #5f2020; }
-            QLabel#total { background: #a93232; color: white; }
-            QFrame#loginCard { background: #ffffff; border: 1px solid #ead1d1; }
+            QFrame#card { background: #f8eeee; border: 1px solid #d7b8b8; }
+            QLabel#total { background: #8f2525; color: white; }
+            QFrame#loginCard { background: #f8eeee; border: 1px solid #d7b8b8; }
             QLabel#loginTitle { color: #7f1d1d; }
-            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #7f1d1d; }
-            QPushButton#loginPrimaryButton { background: #c43f3f; color: #ffffff; }
-            QPushButton#loginPrimaryButton:hover { background: #ad3939; }
-            QPushButton#loginSecondaryButton { background: #fff1f1; color: #b71c1c; }
-            QPushButton#loginSecondaryButton:hover { background: #ffe4e4; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #7f4545; }
+            QPushButton#loginPrimaryButton { background: #a52f2f; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #8f2525; }
+            QPushButton#loginSecondaryButton { background: #ead5d5; color: #7f1d1d; }
+            QPushButton#loginSecondaryButton:hover { background: #e0c2c2; }
         """,
     },
     "KEAGAMAAN": {
         "label": "Keagamaan",
         "stylesheet": COMMON + """
-            QWidget { background: #f5f7f4; color: #26382d; font-family: 'Segoe UI'; }
-            QMainWindow, QDialog { background: #f5f7f4; }
-            QMenuBar { background: #ffffff; color: #294638; border-bottom: 2px solid #6c8872; }
-            QMenuBar::item:selected, QMenu::item:selected { background: #edf4ee; color: #315a40; }
-            QMenu { background: #ffffff; color: #203027; border: 1px solid #d7e2d9; }
-            QTabWidget::pane { border: 0; background: #f5f7f4; }
-            QTabBar { background: #edf2ed; }
-            QTabBar::tab { background: #edf2ed; color: #50675a; padding: 10px 16px; border: 0; }
-            QTabBar::tab:selected { background: #ffffff; color: #315a40; border-bottom: 3px solid #66856f; }
-            QPushButton { background: #62806a; color: white; border: 0; border-radius: 7px; padding: 8px 14px; font-weight: 600; }
-            QPushButton:hover { background: #506d58; }
-            QPushButton#primary { background: #587963; }
-            QPushButton#danger { background: #9a5555; }
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: white; color: #203027; border: 1px solid #ccd8ce; border-radius: 6px; padding: 6px; }
-            QTableWidget, QListWidget { background: white; color: #203027; border: 1px solid #d7e2d9; border-radius: 8px; alternate-background-color: #fafcf9; }
-            QHeaderView::section { background: #e7efe9; color: #315a40; padding: 8px; border: 0; font-weight: 700; }
-            QGroupBox { background: white; border: 1px solid #d7e2d9; border-radius: 9px; margin-top: 10px; padding: 12px 8px 8px; font-weight: 700; }
-            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; background: #f5f7f4; color: #315a40; }
-            QFrame#brandStrip { background: #5f7f68; }
+            QWidget { background: #e8eee9; color: #203027; font-family: 'Segoe UI'; }
+            QMainWindow, QDialog { background: #e8eee9; }
+            QMenuBar { background: #294638; color: #f3f7f3; border-bottom: 2px solid #7c9a83; }
+            QMenuBar::item:selected { background: #3d5f4a; color: #ffffff; }
+            QMenu { background: #294638; color: #ffffff; border: 1px solid #55745f; }
+            QMenu::item:selected { background: #4f705a; color: #ffffff; }
+            QTabWidget::pane { border: 0; background: #e8eee9; }
+            QTabBar { background: #365641; }
+            QTabBar::tab { background: #365641; color: #e2eee5; padding: 10px 16px; border: 0; }
+            QTabBar::tab:hover { background: #476650; color: #ffffff; }
+            QTabBar::tab:selected { background: #eef3ef; color: #294638; border-bottom: 3px solid #718f78; }
+            QPushButton { background: #52715c; color: #ffffff; border: 0; border-radius: 7px; padding: 8px 14px; font-weight: 600; }
+            QPushButton:hover { background: #3f5e49; }
+            QPushButton:disabled { background: #aebdb2; color: #eef3ef; }
+            QPushButton#primary { background: #496c55; }
+            QPushButton#danger { background: #855050; }
+            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit { background: #f3f7f3; color: #203027; border: 1px solid #b8c9bb; border-radius: 6px; padding: 6px; }
+            QTableWidget, QListWidget { background: #f3f7f3; color: #203027; border: 1px solid #b8c9bb; border-radius: 8px; alternate-background-color: #e5ede7; }
+            QHeaderView::section { background: #587963; color: #ffffff; padding: 8px; border: 0; font-weight: 700; }
+            QGroupBox { background: #eef3ef; border: 1px solid #b8c9bb; border-radius: 9px; margin-top: 10px; padding: 12px 8px 8px; font-weight: 700; }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; background: #e8eee9; color: #294638; }
+            QFrame#brandStrip { background: #496b54; }
             QLabel#brandName, QLabel#brandVersion { color: white; }
-            QLabel#cardTitle { color: #65776b; }
+            QLabel#cardTitle { color: #58705f; }
             QLabel#cardValue { color: #294638; }
-            QLabel#total { background: #506f59; color: white; }
-            QFrame#loginCard { background: #ffffff; border: 1px solid #d7e2d9; }
+            QFrame#card { background: #eef3ef; border: 1px solid #b8c9bb; }
+            QLabel#total { background: #496c55; color: white; }
+            QFrame#loginCard { background: #eef3ef; border: 1px solid #b8c9bb; }
             QLabel#loginTitle { color: #294638; }
-            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #50675a; }
-            QPushButton#loginPrimaryButton { background: #587963; color: #ffffff; }
-            QPushButton#loginPrimaryButton:hover { background: #476650; }
-            QPushButton#loginSecondaryButton { background: #edf4ee; color: #315a40; }
-            QPushButton#loginSecondaryButton:hover { background: #dfece1; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #58705f; }
+            QPushButton#loginPrimaryButton { background: #496c55; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #3f5e49; }
+            QPushButton#loginSecondaryButton { background: #dbe7dd; color: #294638; }
+            QPushButton#loginSecondaryButton:hover { background: #ceddD1; }
         """,
     },
     "DARK": {
