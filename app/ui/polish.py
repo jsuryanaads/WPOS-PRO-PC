@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
-from PySide6.QtWidgets import QLabel, QFrame, QHBoxLayout, QTabBar, QTableWidget
+from PySide6.QtWidgets import QLabel, QFrame, QHBoxLayout, QStatusBar, QTableWidget
 
 from .branding import LOGO_PATH
 
@@ -16,7 +16,8 @@ def apply_ui_polish(window):
         QTableWidget::item:selected { background: #dbeafe; color: #111827; }
     """)
 
-    window.setStatusBar(window.statusBar() or __import__("PySide6.QtWidgets", fromlist=["QStatusBar"]).QStatusBar(window))
+    if window.statusBar() is None:
+        window.setStatusBar(QStatusBar(window))
     window.statusBar().showMessage(f"WPOS PRO V1.0  |  {window.user.username}  |  {window.user.role}")
 
     tabs = getattr(window, "tabs", None)
@@ -33,7 +34,6 @@ def apply_ui_polish(window):
             QTabBar::tab:selected { background: #ffffff; color: #111827; border-bottom: 3px solid #1f2937; }
         """)
 
-    # Make tables feel like data grids rather than raw Qt widgets.
     for table in window.findChildren(QTableWidget):
         table.setShowGrid(False)
         table.setWordWrap(False)
@@ -41,7 +41,6 @@ def apply_ui_polish(window):
         table.verticalHeader().setDefaultSectionSize(32)
         table.setFont(QFont("Segoe UI", 9))
 
-    # Add a compact brand strip to the dashboard when the supplied logo exists.
     if tabs and LOGO_PATH.exists() and tabs.count() > 0:
         dashboard = tabs.widget(0)
         layout = dashboard.layout()
