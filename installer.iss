@@ -1,6 +1,6 @@
-; WPOS PRO V1.1.3 Inno Setup
+; WPOS PRO V1.1.4 Inno Setup
 #define MyAppName "WPOS PRO"
-#define MyAppVersion "1.1.3"
+#define MyAppVersion "1.1.4"
 #define MyAppPublisher "WPOS PRO"
 #define MyAppExeName "WPOS PRO.exe"
 
@@ -12,13 +12,14 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\WPOS PRO
 DefaultGroupName=WPOS PRO
 OutputDir=installer
-OutputBaseFilename=WPOS_PRO_V1.1.3_Setup
+OutputBaseFilename=WPOS_PRO_V1.1.4_Setup
+SetupIconFile=assets\branding\wpos_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
-UninstallDisplayName=WPOS PRO V1.1.3
+UninstallDisplayName=WPOS PRO V1.1.4
 
 [Files]
 Source: "dist\WPOS PRO\WPOS PRO.exe"; DestDir: "{app}"; Flags: ignoreversion
