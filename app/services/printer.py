@@ -1,5 +1,6 @@
 from decimal import Decimal
 from html import escape
+from math import ceil
 
 from PySide6.QtCore import QMarginsF, QSizeF
 from PySide6.QtGui import QPageLayout, QPageSize, QTextDocument
@@ -31,22 +32,22 @@ RECEIPT_PROFILES = {
 
 
 def _profile(paper):
-    return RECEIPT_PROFILES.get(str(paper).lower(), RECEIPT_PROFILES["80mm"])
+    return RECEIPT_PROFILES.get(str(paper).lower(), RECEIPT_PROFILES["58mm"])
 
 
 def available_printers():
     return [info.printerName() for info in QPrinterInfo.availablePrinters()]
 
 
-def _configure_receipt_page(printer, paper, height_mm=200.0):
-    """Apply a thermal-friendly physical page size and safe print margins."""
+def _configure_receipt_page(printer, paper, height_mm):
+    """Apply a thermal-friendly physical page size for a continuous roll."""
     profile = _profile(paper)
     width = profile["paper_width_mm"]
 
     # Use QSizeF directly. The optional match policy is intentionally omitted
     # for compatibility across installed PySide6/Qt 6 versions.
     page_size = QPageSize(
-        QSizeF(width, height_mm),
+        QSizeF(width, max(1.0, float(height_mm))),
         QPageSize.Millimeter,
         f"WPOS {paper} Receipt",
     )
@@ -67,8 +68,26 @@ def _configure_receipt_page(printer, paper, height_mm=200.0):
     printer.setCopyCount(1)
 
 
+def _render_document(html, printable_width_mm):
+    """Create a continuously flowing document and measure its required height."""
+    document = QTextDocument()
+    document.setDocumentMargin(0)
+    document.setHtml(html)
+    # QTextDocument uses points when laid out for printing; convert mm to points.
+    text_width_pt = float(printable_width_mm) * 72.0 / 25.4
+    document.setTextWidth(text_width_pt)
+    return document
+
+
+def _document_height_mm(document, minimum_mm=45.0):
+    """Return the rendered content height in mm, rounded up for safe feeding."""
+    height_pt = max(0.0, float(document.size().height()))
+    height_mm = height_pt * 25.4 / 72.0
+    return max(float(minimum_mm), ceil(height_mm + 2.0))
+
+
 def receipt_html(sale, items, settings):
-    paper = settings.get("receipt_paper", "80mm")
+    paper = settings.get("receipt_paper", "58mm")
     profile = _profile(paper)
     width = profile["printable_width_mm"]
     rows = []
@@ -109,11 +128,8 @@ def receipt_html(sale, items, settings):
     """
 
 
-def _print_document(printer, html):
-    """Render and print a QTextDocument using the Qt 6 Python binding."""
-    document = QTextDocument()
-    document.setHtml(html)
-    # QTextDocument.print is exposed as print_ in PySide6 because print is a Python keyword.
+def _print_document(printer, document):
+    """Print an already-laid-out QTextDocument."""
     document.print_(printer)
 
 
@@ -123,8 +139,13 @@ def print_receipt(parent, sale, items):
     with SessionLocal() as session:
         settings = get_settings(session)
 
+    paper = settings.get("receipt_paper", "58mm")
+    profile = _profile(paper)
+    document = _render_document(receipt_html(sale, items, settings), profile["printable_width_mm"])
+    height_mm = _document_height_mm(document)
+
     printer = QPrinter(QPrinter.HighResolution)
-    _configure_receipt_page(printer, settings.get("receipt_paper", "80mm"))
+    _configure_receipt_page(printer, paper, height_mm)
     configured = settings.get("printer_name", "")
     if configured:
         for info in QPrinterInfo.availablePrinters():
@@ -135,21 +156,16 @@ def print_receipt(parent, sale, items):
     dialog.setWindowTitle("Cetak Struk WPOS PRO")
     if dialog.exec() != QPrintDialog.Accepted:
         return False
-    _print_document(printer, receipt_html(sale, items, settings))
+    _print_document(printer, document)
     return True
 
 
-def test_print(parent, printer_name="", paper="80mm"):
+def test_print(parent, printer_name="", paper="58mm"):
+    profile = _profile(paper)
     printer = QPrinter(QPrinter.HighResolution)
-    # A printer test should produce a short physical slip, not a full 200 mm page.
-    _configure_receipt_page(printer, paper, height_mm=60.0)
     if printer_name:
         printer.setPrinterName(printer_name)
-    dialog = QPrintDialog(printer, parent)
-    dialog.setWindowTitle("Tes Printer WPOS PRO")
-    if dialog.exec() != QPrintDialog.Accepted:
-        return False
-    profile = _profile(paper)
+
     html = (
         "<html><head><style>"
         f"body{{width:{profile['printable_width_mm']}mm;"
@@ -164,5 +180,13 @@ def test_print(parent, printer_name="", paper="80mm"):
         f"<p>Printer: {escape(str(printer.printerName()))}</p>"
         "</body></html>"
     )
-    _print_document(printer, html)
+    document = _render_document(html, profile["printable_width_mm"])
+    height_mm = _document_height_mm(document, minimum_mm=40.0)
+    _configure_receipt_page(printer, paper, height_mm)
+
+    dialog = QPrintDialog(printer, parent)
+    dialog.setWindowTitle("Tes Printer WPOS PRO")
+    if dialog.exec() != QPrintDialog.Accepted:
+        return False
+    _print_document(printer, document)
     return True
