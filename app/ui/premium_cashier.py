@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QComboBox,
     QTableWidget,
+    QWidget,
 )
 
 
@@ -19,32 +20,20 @@ def _label(text, object_name=None):
     return w
 
 
-def _clear_layout(layout):
-    """Detach existing widgets without destroying the live page/layout."""
-    while layout.count():
-        item = layout.takeAt(0)
-        child = item.widget()
-        if child is not None:
-            child.setParent(None)
-        nested = item.layout()
-        if nested is not None:
-            _clear_layout(nested)
-
-
 def apply_premium_cashier(window):
-    """Build the modern cashier UI on the existing page layout.
+    """Create the cashier page as a fresh live page in the modern stack.
 
-    The legacy page is retained as the same QWidget so MainWindow business
-    logic and page ownership remain stable. Replacing/deleting the live
-    layout was fragile and could leave a blank cashier page.
+    The previous implementation rebuilt the legacy page in place. In a
+    QStackedWidget, that can preserve the old tab's hidden/visibility state
+    and result in a completely blank Kasir page. The cashier business logic
+    lives on MainWindow, so the page itself can safely be replaced.
     """
-    page = window.modern_stack.widget(1)
-    root = page.layout()
-    if root is None:
-        root = QVBoxLayout(page)
-    else:
-        _clear_layout(root)
+    old_page = window.modern_stack.widget(1)
+    current_index = window.modern_stack.currentIndex()
 
+    page = QWidget()
+    page.setObjectName("premiumCashierPage")
+    root = QVBoxLayout(page)
     root.setContentsMargins(4, 2, 4, 4)
     root.setSpacing(12)
 
@@ -178,5 +167,11 @@ def apply_premium_cashier(window):
     pay_l.addLayout(buttons)
     body.addWidget(pay_card, 1)
     root.addLayout(body, 1)
+
+    window.modern_stack.removeWidget(old_page)
+    window.modern_stack.insertWidget(1, page)
+    old_page.deleteLater()
+    if current_index == 1:
+        window.modern_stack.setCurrentIndex(1)
 
     window.barcode.setFocus()
