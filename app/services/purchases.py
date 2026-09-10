@@ -1,5 +1,5 @@
 from decimal import Decimal
-from ..models import Purchase, PurchaseItem, Product, StockMovement
+from ..models import Purchase, PurchaseItem, Product, Supplier, StockMovement
 
 
 def create_purchase(session, items, supplier_id, invoice_no):
@@ -11,8 +11,13 @@ def create_purchase(session, items, supplier_id, invoice_no):
     if session.query(Purchase).filter_by(invoice_no=invoice_no).first():
         raise ValueError("Nomor pembelian sudah digunakan")
 
+    supplier = None
+    if supplier_id is not None:
+        supplier = session.get(Supplier, int(supplier_id))
+        if not supplier:
+            raise ValueError("Supplier tidak ditemukan")
+
     total = Decimal("0")
-    products = {}
     normalized_items = []
     try:
         for row in items:
@@ -24,11 +29,10 @@ def create_purchase(session, items, supplier_id, invoice_no):
             product = session.get(Product, product_id)
             if not product or not product.active:
                 raise ValueError("Produk tidak ditemukan/tidak aktif")
-            products[product.id] = product
             normalized_items.append((product, qty, cost))
             total += qty * cost
 
-        purchase = Purchase(invoice_no=invoice_no, supplier_id=supplier_id, total=total)
+        purchase = Purchase(invoice_no=invoice_no, supplier_id=supplier.id if supplier else None, total=total)
         session.add(purchase)
         session.flush()
         for product, qty, cost in normalized_items:
