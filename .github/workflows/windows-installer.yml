@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   installer:
     runs-on: windows-latest
@@ -67,10 +70,18 @@ jobs:
           if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
           Get-Item $setup | Format-List FullName,Length
 
-      - name: Upload installer
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: WPOS-PRO-V1.1.1-Installer
           path: installer/WPOS_PRO_V1.1.1_Setup.exe
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish V1.1.1 release asset
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload V1.1.1 installer/WPOS_PRO_V1.1.1_Setup.exe --clobber
