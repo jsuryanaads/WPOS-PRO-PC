@@ -1,6 +1,8 @@
 from decimal import Decimal
 from ..models import Sale, SaleItem, Product, StockMovement, CashMovement
 
+PAYMENT_METHODS = {"CASH", "QRIS", "TRANSFER", "DEBIT"}
+
 
 def create_sale(session, items, discount, paid, payment_method, invoice_no):
     if not items:
@@ -13,12 +15,11 @@ def create_sale(session, items, discount, paid, payment_method, invoice_no):
         raise ValueError("Nomor invoice wajib diisi")
     if discount < 0 or paid < 0:
         raise ValueError("Diskon/pembayaran tidak valid")
-    if payment_method not in {"CASH", "NON_CASH"}:
+    if payment_method not in PAYMENT_METHODS:
         raise ValueError("Metode pembayaran tidak valid")
     if session.query(Sale).filter_by(invoice_no=invoice_no).first():
         raise ValueError("Nomor invoice sudah digunakan")
 
-    total = Decimal("0")
     products = {}
     requested = {}
     normalized_items = []
@@ -39,9 +40,7 @@ def create_sale(session, items, discount, paid, payment_method, invoice_no):
             if Decimal(str(products[product_id].stock)) < qty:
                 raise ValueError(f"Stok {products[product_id].name} tidak mencukupi")
 
-        subtotal = Decimal("0")
-        for product, qty in normalized_items:
-            subtotal += Decimal(str(product.selling_price)) * qty
+        subtotal = sum((Decimal(str(product.selling_price)) * qty for product, qty in normalized_items), Decimal("0"))
         if discount > subtotal:
             discount = subtotal
         total = subtotal - discount
