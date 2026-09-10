@@ -2,12 +2,15 @@ name: WPOS PRO Windows Installer
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   installer:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[INSTALL V1.1.5]') }}
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -56,7 +59,13 @@ jobs:
           $logo = "dist\WPOS PRO\_internal\assets\branding\wpos_logo.png"
           if (!(Test-Path $exe)) { throw "WPOS PRO.exe tidak ditemukan" }
           if (!(Test-Path $logo)) { throw "Logo tidak ikut dipaketkan: $logo" }
-          Get-Item $exe, $logo | Format-List FullName,Length
+          Add-Type -AssemblyName System.Drawing
+          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Resolve-Path $exe).Path)
+          if ($null -eq $icon) { throw "Windows EXE tidak memiliki associated icon resource" }
+          $iconOut = Join-Path $env:TEMP "wpos-pro-extracted.ico"
+          $icon.Save($iconOut)
+          if (!(Test-Path $iconOut) -or (Get-Item $iconOut).Length -lt 100) { throw "Icon resource EXE tidak valid" }
+          Get-Item $exe, $logo, $iconOut | Format-List FullName,Length
 
       - name: Install Inno Setup
         shell: pwsh
@@ -67,11 +76,16 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
-      - name: Verify installer
+      - name: Verify installer and shortcut icon
         shell: pwsh
         run: |
           $setup = "installer\WPOS_PRO_V1.1.5_Setup.exe"
           if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $setup).Path)
+          if ($bytes.Length -lt 100000) { throw "Installer terlalu kecil atau tidak valid" }
+          $iss = Get-Content -Raw installer.iss
+          if ($iss -notmatch 'SetupIconFile=assets\\branding\\wpos_logo\.ico') { throw "SetupIconFile WPOS tidak terpasang" }
+          if ($iss -notmatch 'Name: "\{autodesktop\}\\WPOS PRO"; Filename: "\{app\}\\WPOS PRO\.exe"') { throw "Shortcut desktop WPOS PRO tidak terkonfigurasi" }
           Get-Item $setup | Format-List FullName,Length
 
       - name: Upload installer artifact
@@ -87,6 +101,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create V1.1.5 --title "V1.1.5" --notes "WPOS PRO V1.1.5 — stabilized modern UI, Qt6 compatibility, and branded Windows icon" 2>$null
+          gh release create V1.1.5 --title "V1.1.5" --notes "WPOS PRO V1.1.5 — Stabilized Modern POS 2026 Windows build with branded application and installer icons" 2>$null
           if ($LASTEXITCODE -ne 0) { $LASTEXITCODE = 0 }
           gh release upload V1.1.5 installer/WPOS_PRO_V1.1.5_Setup.exe --clobber
