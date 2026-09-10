@@ -5,7 +5,7 @@ DEFAULT_SETTINGS = {
     "store_address": "",
     "store_phone": "",
     "receipt_footer": "Terima kasih sudah berbelanja",
-    "receipt_paper": "80mm",
+    "receipt_paper": "58mm",
     "printer_name": "",
 }
 
