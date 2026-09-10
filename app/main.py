@@ -20,10 +20,8 @@ def main():
 
     def change_theme(key, menu, window):
         set_theme(key)
-        # Polish creates presentation widgets; theme is applied last so the selected
-        # theme remains the authoritative visual layer.
-        apply_ui_polish(window)
         apply_theme(app, key)
+        apply_ui_polish(window)
         for action in menu.actions():
             action.setChecked(action.text() == THEMES[key]["label"])
         window.statusBar().showMessage(
@@ -32,6 +30,9 @@ def main():
 
     def success(user):
         window = MainWindow(user)
+        # Theme styles are owned by the application stylesheet. MainWindow's
+        # legacy local stylesheet would override dark/special themes.
+        window.setStyleSheet("")
         apply_ui_polish(window)
         apply_theme(app, current_theme())
         holder["main"] = window
