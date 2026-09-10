@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QApplication, QStackedWidget, QWidget
 
 from app.ui.premium_cashier import apply_premium_cashier
@@ -62,6 +63,22 @@ def test_premium_cashier_replaces_blank_legacy_page(qapp):
     assert harness.barcode.objectName() == "premiumBarcode"
     assert harness.cart_table is not None
     assert harness.paid is not None
+
+
+def test_premium_cashier_has_keyboard_focus_shortcuts(qapp):
+    harness = CashierHarness()
+    apply_premium_cashier(harness)
+    qapp.processEvents()
+
+    page = harness.modern_stack.widget(1)
+    shortcuts = page.findChildren(QShortcut)
+    sequences = {shortcut.key().toString() for shortcut in shortcuts}
+
+    assert {"F2", "Ctrl+K"}.issubset(sequences)
+    for shortcut in shortcuts:
+        if shortcut.key().toString() in {"F2", "Ctrl+K"}:
+            shortcut.activated.emit()
+            assert harness.barcode.hasFocus()
 
 
 def test_modern_page_surface_rules_are_present(qapp):
