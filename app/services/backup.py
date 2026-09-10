@@ -2,11 +2,11 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sqlite3
-from ..config import BASE_DIR, BACKUP_DIR
+from ..config import DATA_DIR, BACKUP_DIR
 
 
 def _database_path():
-    return BASE_DIR / "data" / "wpos.db"
+    return DATA_DIR / "wpos.db"
 
 
 def backup_database():
