@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon
 from .config import APP_VERSION
 from .database import init_db
 from .ui.login import LoginWindow
-from .ui.main_window import MainWindow
+from .ui.modern_main_window import ModernMainWindow
 from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
@@ -23,6 +23,7 @@ def main():
         set_theme(key)
         apply_theme(app, key)
         apply_ui_polish(window)
+        window._apply_modern_style()
         for action in menu.actions():
             action.setChecked(action.text() == THEMES[key]["label"])
         window.statusBar().showMessage(
@@ -37,10 +38,11 @@ def main():
             holder["login"] = login_window
             login_window.show()
 
-        window = MainWindow(user, logout_callback=logout_callback)
+        window = ModernMainWindow(user, logout_callback=logout_callback)
         window.setStyleSheet("")
         apply_ui_polish(window)
         apply_theme(app, current_theme())
+        window._apply_modern_style()
         holder["main"] = window
 
         theme_menu = window.menuBar().addMenu("Tema")
