@@ -23,6 +23,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
+      - name: Verify branding asset
+        shell: pwsh
+        run: |
+          $logo = "assets\branding\wpos_logo.png"
+          if (!(Test-Path $logo)) { throw "Logo tidak ditemukan: $logo" }
+          Get-Item $logo | Format-List FullName,Length
+
       - name: Compile Python
         run: python -m compileall -q app
 
@@ -32,14 +39,16 @@ jobs:
         run: pytest -q
 
       - name: Build EXE
-        run: python -m PyInstaller --clean --noconfirm --windowed --name "WPOS PRO" --paths . run.py
+        run: python -m PyInstaller --clean --noconfirm --windowed --name "WPOS PRO" --paths . --add-data "assets;assets" run.py
 
-      - name: Verify EXE
+      - name: Verify EXE and branding
         shell: pwsh
         run: |
           $exe = "dist\WPOS PRO\WPOS PRO.exe"
+          $logo = "dist\WPOS PRO\assets\branding\wpos_logo.png"
           if (!(Test-Path $exe)) { throw "EXE tidak ditemukan: $exe" }
-          Get-Item $exe | Format-List FullName,Length
+          if (!(Test-Path $logo)) { throw "Logo tidak ikut dipaketkan: $logo" }
+          Get-Item $exe,$logo | Format-List FullName,Length
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
