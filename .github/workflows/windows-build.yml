@@ -55,7 +55,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: WPOS-PRO-V1.0-Windows
+          name: WPOS-PRO-V1.1.1-Windows
           path: dist/WPOS PRO/
           if-no-files-found: error
           retention-days: 14
