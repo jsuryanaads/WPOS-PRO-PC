@@ -19,19 +19,32 @@ def _label(text, object_name=None):
     return w
 
 
-def apply_premium_cashier(window):
-    """Replace the legacy cashier page layout while preserving existing business logic."""
-    page = window.modern_stack.widget(1)
-    old_layout = page.layout()
-    if old_layout is not None:
-        while old_layout.count():
-            item = old_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.setParent(None)
-        old_layout.deleteLater()
+def _clear_layout(layout):
+    """Detach existing widgets without destroying the live page/layout."""
+    while layout.count():
+        item = layout.takeAt(0)
+        child = item.widget()
+        if child is not None:
+            child.setParent(None)
+        nested = item.layout()
+        if nested is not None:
+            _clear_layout(nested)
 
-    root = QVBoxLayout(page)
+
+def apply_premium_cashier(window):
+    """Build the modern cashier UI on the existing page layout.
+
+    The legacy page is retained as the same QWidget so MainWindow business
+    logic and page ownership remain stable. Replacing/deleting the live
+    layout was fragile and could leave a blank cashier page.
+    """
+    page = window.modern_stack.widget(1)
+    root = page.layout()
+    if root is None:
+        root = QVBoxLayout(page)
+    else:
+        _clear_layout(root)
+
     root.setContentsMargins(4, 2, 4, 4)
     root.setSpacing(12)
 
@@ -42,8 +55,11 @@ def apply_premium_cashier(window):
     title_box.addWidget(_label("Transaksi cepat · barcode first · offline", "premiumPageSubtitle"))
     intro.addLayout(title_box)
     intro.addStretch()
-    shortcut = _label("ENTER  Tambah  ·  F2  Fokus Barcode  ·  Ctrl+K  Cari", "premiumShortcut")
-    intro.addWidget(shortcut, 0, Qt.AlignBottom)
+    intro.addWidget(
+        _label("ENTER  Tambah  ·  F2  Fokus Barcode  ·  Ctrl+K  Cari", "premiumShortcut"),
+        0,
+        Qt.AlignBottom,
+    )
     root.addLayout(intro)
 
     scan = QFrame()
@@ -123,8 +139,6 @@ def apply_premium_cashier(window):
     window.method.setObjectName("premiumMethod")
     window.method.blockSignals(True)
     window.method.addItems(["CASH", "QRIS", "TRANSFER", "DEBIT"])
-    window.method.blockSignals(False)
-    window.method.currentTextChanged.connect(window.payment_method_changed)
     method_row.addWidget(window.method, 1)
     pay_l.addLayout(method_row)
 
@@ -136,6 +150,9 @@ def apply_premium_cashier(window):
     window.paid.setPrefix("Rp ")
     paid_row.addWidget(window.paid, 1)
     pay_l.addLayout(paid_row)
+
+    window.method.currentTextChanged.connect(window.payment_method_changed)
+    window.method.blockSignals(False)
 
     change_box = QFrame()
     change_box.setObjectName("premiumChangeBox")
