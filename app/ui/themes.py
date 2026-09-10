@@ -12,6 +12,15 @@ COMMON = """
     QLabel#brandName { font-size: 18px; font-weight: 800; background: transparent; }
     QLabel#brandVersion { font-size: 11px; background: transparent; }
     QLabel#total { border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
+    QFrame#loginCard { border-radius: 18px; }
+    QLabel#loginTitle { font-size: 27px; font-weight: 800; }
+    QLabel#loginVersion { font-size: 12px; }
+    QLabel#loginWelcome { font-size: 13px; }
+    QLabel#loginFieldLabel { font-size: 11px; font-weight: 800; }
+    QLabel#loginFooter { font-size: 11px; }
+    QLineEdit#loginInput { min-height: 30px; padding: 6px 12px; border-radius: 9px; }
+    QPushButton#loginPrimaryButton { min-height: 30px; border-radius: 10px; font-size: 14px; font-weight: 800; }
+    QPushButton#loginSecondaryButton { min-width: 58px; min-height: 30px; border-radius: 9px; font-weight: 700; }
 """
 
 THEMES = {
@@ -43,6 +52,13 @@ THEMES = {
             QLabel#cardTitle { color: #718096; }
             QLabel#cardValue { color: #102a43; }
             QLabel#total { background: #245d88; color: white; }
+            QFrame#loginCard { background: #ffffff; border: 1px solid #d9e2ec; }
+            QLabel#loginTitle { color: #172033; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #64748b; }
+            QPushButton#loginPrimaryButton { background: #2673b8; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #1f5f99; }
+            QPushButton#loginSecondaryButton { background: #e8f1fb; color: #145a96; }
+            QPushButton#loginSecondaryButton:hover { background: #dbeafe; }
         """,
     },
     "KEMERDEKAAN": {
@@ -71,6 +87,13 @@ THEMES = {
             QLabel#cardTitle { color: #7b6262; }
             QLabel#cardValue { color: #5f2020; }
             QLabel#total { background: #a93232; color: white; }
+            QFrame#loginCard { background: #ffffff; border: 1px solid #ead1d1; }
+            QLabel#loginTitle { color: #7f1d1d; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #7f1d1d; }
+            QPushButton#loginPrimaryButton { background: #c43f3f; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #ad3939; }
+            QPushButton#loginSecondaryButton { background: #fff1f1; color: #b71c1c; }
+            QPushButton#loginSecondaryButton:hover { background: #ffe4e4; }
         """,
     },
     "KEAGAMAAN": {
@@ -99,6 +122,13 @@ THEMES = {
             QLabel#cardTitle { color: #65776b; }
             QLabel#cardValue { color: #294638; }
             QLabel#total { background: #506f59; color: white; }
+            QFrame#loginCard { background: #ffffff; border: 1px solid #d7e2d9; }
+            QLabel#loginTitle { color: #294638; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #50675a; }
+            QPushButton#loginPrimaryButton { background: #587963; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #476650; }
+            QPushButton#loginSecondaryButton { background: #edf4ee; color: #315a40; }
+            QPushButton#loginSecondaryButton:hover { background: #dfece1; }
         """,
     },
     "DARK": {
@@ -130,6 +160,14 @@ THEMES = {
             QFrame#card { background: #1e232d; border: 1px solid #343c49; }
             QLabel#total { background: #315f9f; color: white; }
             QTableWidget::item:selected { background: #334e70; color: #ffffff; }
+            QFrame#loginCard { background: #1e232d; border: 1px solid #343c49; }
+            QLabel#loginTitle { color: #f8fafc; }
+            QLabel#loginVersion, QLabel#loginWelcome, QLabel#loginFieldLabel, QLabel#loginFooter { color: #aab3c0; }
+            QPushButton#loginPrimaryButton { background: #396fae; color: #ffffff; }
+            QPushButton#loginPrimaryButton:hover { background: #4b83c3; }
+            QPushButton#loginSecondaryButton { background: #293241; color: #dbeafe; }
+            QPushButton#loginSecondaryButton:hover { background: #344154; }
+            QLineEdit#loginInput { background: #222833; color: #e6eaf0; border: 1px solid #3a424f; }
         """,
     },
 }
