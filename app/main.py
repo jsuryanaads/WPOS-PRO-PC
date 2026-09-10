@@ -1,6 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
+from .config import APP_VERSION
 from .database import init_db
 from .ui.login import LoginWindow
 from .ui.main_window import MainWindow
@@ -25,7 +26,7 @@ def main():
         for action in menu.actions():
             action.setChecked(action.text() == THEMES[key]["label"])
         window.statusBar().showMessage(
-            f"WPOS PRO V1.0  |  {window.user.username}  |  {window.user.role}  |  Tema: {THEMES[key]['label']}"
+            f"WPOS PRO {APP_VERSION}  |  {window.user.username}  |  {window.user.role}  |  Tema: {THEMES[key]['label']}"
         )
 
     def success(user):
@@ -37,8 +38,6 @@ def main():
             login_window.show()
 
         window = MainWindow(user, logout_callback=logout_callback)
-        # Theme styles are owned by the application stylesheet. MainWindow's
-        # legacy local stylesheet would override dark/special themes.
         window.setStyleSheet("")
         apply_ui_polish(window)
         apply_theme(app, current_theme())

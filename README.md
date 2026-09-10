@@ -1,6 +1,6 @@
-# WPOS PRO V1.0
+# WPOS PRO V1.1.1
 
-POS toko sembako Windows offline, satu komputer.
+Modern POS 2026 untuk toko sembako Windows offline, satu komputer.
 
 ## Teknologi
 - Python 3.11+
@@ -34,19 +34,18 @@ Barcode → Keranjang → Diskon → Pembayaran → Kembalian → Stok berkurang
 - Invoice unik.
 - Barcode unik.
 - Stok tidak boleh negatif.
-- Penjualan diproses atomically: transaksi, item, pengurangan stok dan mutasi stok berhasil bersama atau dibatalkan bersama.
+- Penjualan diproses atomically.
 - Penjualan CASH menambah kas.
 - QRIS/TRANSFER/DEBIT tidak menambah kas.
 - Pembayaran non-tunai harus sama persis dengan total.
 - Kembalian hanya untuk CASH.
 - Mutasi stok dicatat untuk penjualan, pembelian dan penyesuaian stok.
 
-## Keamanan akun
-- Password menggunakan PBKDF2-HMAC-SHA256 dengan salt acak.
-- Hanya akun aktif yang dapat login.
-- Policy role dipusatkan di `app/services/access.py`.
-- Administrator terakhir tidak boleh dinonaktifkan.
-- Akun sendiri tidak boleh dinonaktifkan melalui user-management service.
+## Versioning
+- Perubahan kecil: patch version.
+- Perubahan menengah: naik ke target minor patch sesuai aturan proyek.
+- Perubahan besar: naik ke versi minor baru, contoh V1.0.1 → V1.1.1.
+- Redesign UI/UX Modern POS 2026 ditetapkan sebagai perubahan besar dan ditargetkan pada V1.1.1.
 
 ## Default login
 - Username: `admin`
@@ -55,7 +54,7 @@ Barcode → Keranjang → Diskon → Pembayaran → Kembalian → Stok berkurang
 **Penting:** ubah password default sebelum produksi.
 
 ## Data Windows
-Saat dijalankan sebagai EXE, database dan backup disimpan di `%LOCALAPPDATA%\\WPOS PRO`, sehingga aplikasi tidak perlu menulis database ke Program Files.
+Saat dijalankan sebagai EXE, database dan backup disimpan di `%LOCALAPPDATA%\\WPOS PRO`.
 
 ## Menjalankan dari source
 ```bat
@@ -74,4 +73,4 @@ Jalankan `build.bat` pada Windows dengan Python dan PyInstaller terpasang.
 Compile `installer.iss` menggunakan Inno Setup setelah EXE berhasil dibuat.
 
 ## Status
-Repository ini adalah master source pengembangan WPOS PRO V1.0. Setiap fitur dianggap selesai setelah terintegrasi, diuji, dan diaudit; bukan hanya setelah source berhasil di-commit.
+WPOS PRO V1.1.1 adalah target pengembangan Modern POS 2026. Setiap fitur dianggap selesai setelah terintegrasi, diuji, dan diaudit.
