@@ -96,4 +96,18 @@ def apply_ux2026(window):
             padding-left: 8px;
             padding-right: 8px;
         }
+
+        /* Modern shell page surfaces: legacy pages must not inherit a dark
+           background from the shell and must keep readable text contrast. */
+        QWidget#modernStack > QWidget {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        QWidget#premiumCashierPage {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        QWidget#modernStack QWidget {
+            font-size: 11px;
+        }
     """)
