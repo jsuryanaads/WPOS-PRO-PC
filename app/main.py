@@ -1,9 +1,10 @@
 import sys
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtGui import QIcon
 from .database import init_db
 from .ui.login import LoginWindow
 from .ui.main_window import MainWindow
+from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
 
 
@@ -15,8 +16,17 @@ def main():
     holder = {}
 
     def success(user):
-        holder["main"] = MainWindow(user)
-        holder["main"].show()
+        window = MainWindow(user)
+        holder["main"] = window
+
+        # User administration is intentionally available only to ADMIN.
+        # It is kept as a separate dialog so the existing POS tab layout is not disturbed.
+        if str(user.role).upper() == "ADMIN":
+            menu = window.menuBar().addMenu("Administrasi")
+            action = menu.addAction("Manajemen User")
+            action.triggered.connect(lambda: UserManagementDialog(user, window).exec())
+
+        window.show()
 
     login = LoginWindow(success)
     login.show()
