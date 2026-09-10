@@ -86,7 +86,7 @@ jobs:
           if ($bytes.Length -lt 100000) { throw "Installer terlalu kecil atau tidak valid" }
           $iss = Get-Content -Raw installer.iss
           if ($iss -notmatch 'SetupIconFile=assets\\branding\\wpos_logo\.ico') { throw "SetupIconFile WPOS tidak terpasang" }
-          if ($iss -notmatch 'Name: "\{autodesktop\}\\WPOS PRO"; Filename: "\{app\}\\WPOS PRO\.exe"') { throw "Shortcut desktop WPOS PRO tidak terkonfigurasi" }
+          if ($iss -notmatch 'Name: "\{autodesktop\}\\WPOS PRO"; Filename: "\{app\}\\WPOS PRO\.exe"; IconFilename: "\{app\}\\WPOS PRO\.exe"') { throw "Shortcut desktop WPOS PRO tidak terkonfigurasi dengan icon" }
           Get-Item $setup | Format-List FullName,Length
 
       - name: Smoke install and verify desktop shortcut
@@ -95,11 +95,12 @@ jobs:
           $setup = (Resolve-Path "installer\WPOS_PRO_V1.1.5_Setup.exe").Path
           $installDir = Join-Path $env:RUNNER_TEMP "WPOSPRO_Smoke"
           if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
+          $desktop = [Environment]::GetFolderPath('Desktop')
+          if (!(Test-Path $desktop)) { New-Item -ItemType Directory -Path $desktop -Force | Out-Null }
           $process = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$installDir" -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Smoke install gagal, exit code $($process.ExitCode)" }
           $installedExe = Join-Path $installDir "WPOS PRO.exe"
           if (!(Test-Path $installedExe)) { throw "EXE hasil instalasi tidak ditemukan" }
-          $desktop = [Environment]::GetFolderPath('Desktop')
           $shortcut = Join-Path $desktop "WPOS PRO.lnk"
           if (!(Test-Path $shortcut)) { throw "Shortcut desktop WPOS PRO tidak dibuat" }
           $shell = New-Object -ComObject WScript.Shell
