@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -123,18 +124,25 @@ class ModernMainWindow(MainWindow):
         topbar = QFrame()
         topbar.setObjectName("modernTopbar")
         top_l = QHBoxLayout(topbar)
-        top_l.setContentsMargins(16, 9, 16, 9)
-        top_l.setSpacing(10)
+        top_l.setContentsMargins(16, 10, 16, 10)
+        top_l.setSpacing(12)
+        title_box = QVBoxLayout()
+        title_box.setContentsMargins(0, 0, 0, 0)
+        title_box.setSpacing(2)
         self.modern_context = QLabel("Dashboard")
         self.modern_context.setObjectName("modernContext")
         self.modern_hint = QLabel("Ringkasan bisnis hari ini")
         self.modern_hint.setObjectName("modernHint")
-        top_l.addWidget(self.modern_context)
-        top_l.addWidget(self.modern_hint)
-        top_l.addStretch()
-        clock = QLabel("● OFFLINE  ·  DATABASE LOKAL")
-        clock.setObjectName("modernStatus")
-        top_l.addWidget(clock)
+        title_box.addWidget(self.modern_context)
+        title_box.addWidget(self.modern_hint)
+        top_l.addLayout(title_box, 1)
+
+        offline = QLabel("● OFFLINE")
+        offline.setObjectName("modernStatusOffline")
+        local = QLabel("DATABASE LOKAL")
+        local.setObjectName("modernStatusLocal")
+        top_l.addWidget(offline)
+        top_l.addWidget(local)
         content_l.addWidget(topbar)
 
         self.modern_stack = QStackedWidget()
@@ -150,6 +158,7 @@ class ModernMainWindow(MainWindow):
         apply_premium_cashier(self)
         self._select_navigation(0)
         self._apply_modern_style()
+        self._polish_dashboard()
 
     def _compat_tabs(self, old_tabs, titles):
         class CompatTabs:
@@ -206,6 +215,71 @@ class ModernMainWindow(MainWindow):
             "Kelompok produk", "Satuan barang", "Data pemasok", "Riwayat pelanggan",
         ][index]
 
+    @staticmethod
+    def _shadow(widget, blur=18, y=4):
+        effect = QGraphicsDropShadowEffect(widget)
+        effect.setBlurRadius(blur)
+        effect.setOffset(0, y)
+        effect.setColor(Qt.black)
+        widget.setGraphicsEffect(effect)
+
+    def _polish_dashboard(self):
+        """Apply the clean dashboard hierarchy without changing business logic."""
+        dashboard = self.modern_stack.widget(0)
+        if dashboard is None or dashboard.layout() is None:
+            return
+
+        layout = dashboard.layout()
+        if layout.count() and layout.itemAt(0).widget():
+            header = layout.itemAt(0).widget()
+            if header.objectName() == "":
+                header.hide()
+
+        cards = dashboard.findChildren(QFrame, "card")
+        icons = {
+            "TRANSAKSI": "↗",
+            "PRODUK AKTIF": "▦",
+            "STOK MENIPIS / HABIS": "⚠",
+            "OMZET": "Rp",
+            "SALDO KAS": "▣",
+        }
+        for card in cards:
+            title = card.findChild(QLabel, "cardTitle")
+            value = card.findChild(QLabel, "cardValue")
+            if not title or not value:
+                continue
+            title_text = title.text()
+            if title_text in icons and not card.findChild(QLabel, "dashboardMetricIcon"):
+                card_layout = card.layout()
+                card_layout.takeAt(0)
+                card_layout.takeAt(0)
+                row = QHBoxLayout()
+                row.setContentsMargins(0, 0, 0, 0)
+                row.setSpacing(8)
+                row.addWidget(title)
+                row.addStretch()
+                icon = QLabel(icons[title_text])
+                icon.setObjectName("dashboardMetricIcon")
+                row.addWidget(icon)
+                card_layout.insertLayout(0, row)
+                card_layout.addWidget(value)
+            self._shadow(card, blur=16, y=3)
+
+        for button in dashboard.findChildren(QPushButton):
+            text = button.text().strip()
+            if text == "+ Transaksi Baru":
+                button.setObjectName("dashboardPrimary")
+            elif text == "+ Produk":
+                button.setObjectName("dashboardSecondary")
+            else:
+                button.setObjectName("dashboardGhost")
+
+        for box in dashboard.findChildren(QFrame):
+            if box.objectName() == "card":
+                continue
+            if isinstance(box, QFrame) and box.parent() is dashboard:
+                self._shadow(box, blur=12, y=2)
+
     def _apply_modern_style(self):
         self.setStyleSheet(self.styleSheet() + """
         QFrame#modernSidebar { background: #0b1220; border: 0; min-width: 230px; max-width: 250px; }
@@ -223,11 +297,12 @@ class ModernMainWindow(MainWindow):
         QLabel#modernRole { color: #94a3b8; font-size: 10px; }
         QPushButton#modernLogout { background: #202d45; color: #e2e8f0; border: 1px solid #31425f; border-radius: 8px; padding: 7px; margin-top: 5px; }
         QPushButton#modernLogout:hover { background: #2b3b59; }
-        QFrame#modernContent { background: #f3f6fb; }
-        QFrame#modernTopbar { background: #ffffff; border: 1px solid #dfe6ef; border-radius: 11px; }
-        QLabel#modernContext { color: #0f172a; font-size: 15px; font-weight: 900; }
-        QLabel#modernHint { color: #64748b; font-size: 11px; }
-        QLabel#modernStatus { color: #15803d; font-size: 9px; font-weight: 800; }
+        QFrame#modernContent { background: #f8fafc; }
+        QFrame#modernTopbar { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        QLabel#modernContext { color: #0f172a; font-size: 17px; font-weight: 900; }
+        QLabel#modernHint { color: #64748b; font-size: 10px; }
+        QLabel#modernStatusOffline { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
+        QLabel#modernStatusLocal { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
         QStackedWidget#modernStack { background: transparent; border: 0; }
 
         QWidget#modernStack QWidget { font-size: 11px; }
@@ -249,10 +324,17 @@ class ModernMainWindow(MainWindow):
         QFrame#card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; }
         QLabel#cardTitle { color: #64748b; font-size: 10px; font-weight: 800; }
         QLabel#cardValue { color: #0f172a; font-size: 22px; font-weight: 900; }
+        QLabel#dashboardMetricIcon { min-width: 28px; max-width: 28px; min-height: 28px; max-height: 28px; padding: 3px; border-radius: 8px; background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 900; qproperty-alignment: AlignCenter; }
         QLabel#total { color: #1d4ed8; font-size: 22px; font-weight: 900; }
         QPushButton#primary { background: #2563eb; color: #ffffff; border: 0; min-height: 40px; font-weight: 900; }
         QPushButton#primary:hover { background: #1d4ed8; }
         QPushButton#danger { background: #fee2e2; color: #b91c1c; border: 0; }
+        QPushButton#dashboardPrimary { background: #2563eb; color: #ffffff; border: 0; min-height: 38px; border-radius: 9px; font-weight: 900; }
+        QPushButton#dashboardPrimary:hover { background: #1d4ed8; }
+        QPushButton#dashboardSecondary { background: #0f766e; color: #ffffff; border: 0; min-height: 38px; border-radius: 9px; font-weight: 900; }
+        QPushButton#dashboardSecondary:hover { background: #0d9488; }
+        QPushButton#dashboardGhost { background: #ffffff; color: #334155; border: 1px solid #dbe3ec; min-height: 38px; border-radius: 9px; }
+        QPushButton#dashboardGhost:hover { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
         /* Premium POS cashier */
         QLabel#premiumPageTitle { color: #0f172a; font-size: 24px; font-weight: 950; }
