@@ -10,13 +10,11 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
+ArchitecturesInstallIn64BitMode=x64
+UninstallDisplayName=WPOS PRO V1.0
 
 [Files]
-Source: "dist\WPOS PRO.exe"; DestDir: "{app}"; Flags: ignoreversion
-
-[Dirs]
-Name: "{app}\data"
-Name: "{app}\backups"
+Source: "dist\WPOS PRO\WPOS PRO.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\WPOS PRO"; Filename: "{app}\WPOS PRO.exe"
