@@ -35,5 +35,18 @@ def set_setting(session, key, value):
 
 
 def save_settings(session, values):
-    for key, value in values.items():
-        set_setting(session, key, value)
+    """Save a group of settings in one atomic transaction."""
+    try:
+        for key, value in values.items():
+            key = str(key).strip()
+            if not key:
+                raise ValueError("Key pengaturan wajib diisi")
+            row = session.query(Setting).filter_by(key=key).first()
+            if row:
+                row.value = str(value)
+            else:
+                session.add(Setting(key=key, value=str(value)))
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
