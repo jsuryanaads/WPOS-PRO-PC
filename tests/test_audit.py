@@ -3,10 +3,12 @@ import pytest
 from sqlalchemy import create_engine, inspect, event
 from sqlalchemy.orm import sessionmaker
 from app.database import Base
-from app.models import Product, Sale, SaleItem, StockMovement
+from app.models import Product, Sale, SaleItem, StockMovement, Supplier
 from app.services.auth import hash_password, verify_password
 from app.services.sales import create_sale
 from app.services.stock import adjust_stock
+from app.services.purchases import create_purchase
+from app.services.reports import cash_summary, stock_summary
 
 
 def make_session():
@@ -73,3 +75,40 @@ def test_stock_adjustment_records_movement():
     movement = session.query(StockMovement).one()
     assert movement.quantity == Decimal("-2.000")
     assert movement.reference == "SO-001"
+
+
+def test_purchase_validates_supplier_and_updates_stock():
+    session = make_session()
+    supplier = Supplier(name="Supplier A")
+    product = Product(barcode="8990004", name="Tepung", selling_price=Decimal("12000"), stock=Decimal("2"))
+    session.add_all([supplier, product])
+    session.commit()
+    purchase = create_purchase(session, [{"product_id": product.id, "quantity": "3", "unit_cost": "7000"}], supplier.id, "PB-001")
+    assert purchase.total == Decimal("21000.00")
+    assert session.get(Product, product.id).stock == Decimal("5.000")
+    assert session.query(StockMovement).one().movement_type == "PURCHASE"
+    with pytest.raises(ValueError, match="Supplier tidak ditemukan"):
+        create_purchase(session, [{"product_id": product.id, "quantity": "1", "unit_cost": "7000"}], 99999, "PB-002")
+
+
+def test_non_cash_sale_does_not_increase_cash_balance():
+    session = make_session()
+    product = Product(barcode="8990005", name="Susu", selling_price=Decimal("10000"), stock=Decimal("3"))
+    session.add(product)
+    session.commit()
+    create_sale(session, [{"product_id": product.id, "quantity": "1"}], Decimal("0"), Decimal("10000"), "QRIS", "INV-003")
+    summary = cash_summary(session)
+    assert summary["cash_in"] == Decimal("0")
+    assert summary["balance"] == Decimal("0")
+
+
+def test_stock_summary_statuses():
+    session = make_session()
+    session.add_all([
+        Product(barcode="A", name="A", stock=0, minimum_stock=2),
+        Product(barcode="B", name="B", stock=1, minimum_stock=2),
+        Product(barcode="C", name="C", stock=5, minimum_stock=2),
+    ])
+    session.commit()
+    statuses = {row["name"]: row["status"] for row in stock_summary(session)}
+    assert statuses == {"A": "HABIS", "B": "MENIPIS", "C": "AMAN"}
