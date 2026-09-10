@@ -41,6 +41,14 @@ def receipt_html(sale, items, settings):
     """
 
 
+def _print_document(printer, html):
+    """Render and print a QTextDocument using the Qt 6 Python binding."""
+    document = QTextDocument()
+    document.setHtml(html)
+    # QTextDocument.print is exposed as print_ in PySide6 because print is a Python keyword.
+    document.print_(printer)
+
+
 def print_receipt(parent, sale, items):
     from ..database import SessionLocal
     with SessionLocal() as session:
@@ -56,9 +64,7 @@ def print_receipt(parent, sale, items):
     dialog.setWindowTitle("Cetak Struk WPOS PRO")
     if dialog.exec() != QPrintDialog.Accepted:
         return False
-    document = QTextDocument()
-    document.setHtml(receipt_html(sale, items, settings))
-    document.print(printer)
+    _print_document(printer, receipt_html(sale, items, settings))
     return True
 
 
@@ -70,7 +76,13 @@ def test_print(parent, printer_name="", paper="80mm"):
     dialog.setWindowTitle("Tes Printer WPOS PRO")
     if dialog.exec() != QPrintDialog.Accepted:
         return False
-    document = QTextDocument()
-    document.setHtml(f"<html><body><h3>WPOS PRO</h3><p>TES CETAK BERHASIL</p><p>Kertas: {paper}</p><p>Printer: {printer.printerName()}</p></body></html>")
-    document.print(printer)
+    html = (
+        "<html><body>"
+        "<h3>WPOS PRO</h3>"
+        "<p>TES CETAK BERHASIL</p>"
+        f"<p>Kertas: {paper}</p>"
+        f"<p>Printer: {printer.printerName()}</p>"
+        "</body></html>"
+    )
+    _print_document(printer, html)
     return True
