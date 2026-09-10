@@ -83,6 +83,7 @@ class MainWindow(QMainWindow):
         QPushButton#primary { background: #111827; font-size: 14px; padding: 10px 18px; }
         QPushButton#danger { background: #b42318; }
         QLabel#total { background: #111827; color: white; border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 800; }
+        QLabel#dashboardFooter { color: #7b8794; font-size: 11px; padding-top: 6px; padding-bottom: 2px; }
         QTableWidget { background: white; border: 1px solid #e2e6ea; border-radius: 8px; gridline-color: #eef0f2; }
         QHeaderView::section { background: #f3f4f6; padding: 7px; border: 0; font-weight: 700; }
         """
@@ -177,6 +178,11 @@ class MainWindow(QMainWindow):
         body.addWidget(recent_box, 3)
         body.addWidget(low_box, 2)
         l.addLayout(body, 1)
+
+        footer = QLabel(f"WPOS PRO V1.0 · © {datetime.now().year} Jsuryana · Created by Jsuryana")
+        footer.setObjectName("dashboardFooter")
+        footer.setAlignment(Qt.AlignCenter)
+        l.addWidget(footer)
         return w
 
     def _prepare_table(self, table):
