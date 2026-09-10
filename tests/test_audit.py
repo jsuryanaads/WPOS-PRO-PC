@@ -3,12 +3,14 @@ import pytest
 from sqlalchemy import create_engine, inspect, event
 from sqlalchemy.orm import sessionmaker
 from app.database import Base
-from app.models import Product, Sale, SaleItem, StockMovement, Supplier
+from app.models import Product, Sale, SaleItem, StockMovement, Supplier, User
 from app.services.auth import hash_password, verify_password
 from app.services.sales import create_sale
 from app.services.stock import adjust_stock
 from app.services.purchases import create_purchase
 from app.services.reports import cash_summary, stock_summary
+from app.services.users import ROLES, create_user, set_user_active
+from app.ui.modern_main_window import ModernMainWindow
 
 
 def make_session():
@@ -112,3 +114,37 @@ def test_stock_summary_statuses():
     session.commit()
     statuses = {row["name"]: row["status"] for row in stock_summary(session)}
     assert statuses == {"A": "HABIS", "B": "MENIPIS", "C": "AMAN"}
+
+
+def test_navigation_has_unique_contiguous_page_indexes():
+    entries = [entry for _section, items in ModernMainWindow.NAVIGATION for entry in items]
+    indexes = [entry[2] for entry in entries]
+    assert len(entries) == 14
+    assert sorted(indexes) == list(range(14))
+    assert len(set(indexes)) == 14
+    expected = {
+        0: "Dashboard", 1: "Kasir", 2: "Produk", 3: "Stok & Mutasi", 4: "Pembelian",
+        5: "Kas", 6: "Laporan", 7: "Pengaturan Toko", 8: "Printer", 9: "Backup / Restore",
+        10: "Kategori", 11: "Satuan", 12: "Supplier", 13: "Pelanggan",
+    }
+    assert {index: ModernMainWindow._title_for(index) for index in range(14)} == expected
+
+
+def test_supported_roles_are_stable():
+    assert ROLES == ("ADMIN", "PENGELOLA", "TEKNISI")
+
+
+def test_admin_cannot_be_left_without_active_admin():
+    session = make_session()
+    admin = User(username="admin", password_hash=hash_password("secret"), role="ADMIN", active=True)
+    session.add(admin)
+    session.commit()
+    with pytest.raises(ValueError, match="Minimal satu Administrator aktif"):
+        set_user_active(session, admin.id, False, actor_user_id=999)
+    assert session.get(User, admin.id).active is True
+
+
+def test_user_creation_rejects_invalid_role():
+    session = make_session()
+    with pytest.raises(ValueError, match="Role tidak valid"):
+        create_user(session, "badrole", "secret", "INVALID")
