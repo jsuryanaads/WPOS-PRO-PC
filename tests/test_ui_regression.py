@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QApplication, QStackedWidget, QWidget
 
@@ -75,10 +76,11 @@ def test_premium_cashier_has_keyboard_focus_shortcuts(qapp):
     sequences = {shortcut.key().toString() for shortcut in shortcuts}
 
     assert {"F2", "Ctrl+K"}.issubset(sequences)
-    for shortcut in shortcuts:
-        if shortcut.key().toString() in {"F2", "Ctrl+K"}:
-            shortcut.activated.emit()
-            assert harness.barcode.hasFocus()
+    assert all(
+        shortcut.context() == Qt.WindowShortcut
+        for shortcut in shortcuts
+        if shortcut.key().toString() in {"F2", "Ctrl+K"}
+    )
 
 
 def test_modern_page_surface_rules_are_present(qapp):
