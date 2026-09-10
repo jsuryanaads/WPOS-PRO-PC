@@ -44,9 +44,15 @@ def create_sale(session, items, discount, paid, payment_method, invoice_no):
         if discount > subtotal:
             discount = subtotal
         total = subtotal - discount
-        if paid < total:
-            raise ValueError("Pembayaran kurang")
-        change = paid - total
+
+        if payment_method == "CASH":
+            if paid < total:
+                raise ValueError("Pembayaran kurang")
+            change = paid - total
+        else:
+            if paid != total:
+                raise ValueError("Pembayaran non-tunai harus sama dengan total")
+            change = Decimal("0")
 
         sale = Sale(invoice_no=invoice_no, subtotal=subtotal, discount=discount,
                     total=total, paid=paid, change=change, payment_method=payment_method)
