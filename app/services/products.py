@@ -1,5 +1,5 @@
 from decimal import Decimal, InvalidOperation
-from ..models import Product
+from ..models import Product, StockMovement
 
 
 def _decimal(value, label):
@@ -19,16 +19,25 @@ def create_product(session, barcode, name, purchase_price=0, selling_price=0, st
         raise ValueError("Barcode dan nama wajib diisi")
     if session.query(Product).filter_by(barcode=barcode).first():
         raise ValueError("Barcode sudah digunakan")
+    opening_stock = _decimal(stock, "Stok")
     product = Product(
         barcode=barcode, name=name,
         purchase_price=_decimal(purchase_price, "Harga beli"),
         selling_price=_decimal(selling_price, "Harga jual"),
-        stock=_decimal(stock, "Stok"),
+        stock=opening_stock,
         minimum_stock=_decimal(minimum_stock, "Stok minimum"),
         category_id=category_id, unit_id=unit_id,
     )
     try:
         session.add(product)
+        session.flush()
+        if opening_stock > 0:
+            session.add(StockMovement(
+                product_id=product.id,
+                movement_type="OPENING",
+                quantity=opening_stock,
+                reference="STOK-AWAL",
+            ))
         session.commit()
         session.refresh(product)
         return product
@@ -60,7 +69,6 @@ def update_product(session, product_id, **changes):
     for field in ("category_id", "unit_id", "active"):
         if field in changes:
             setattr(product, field, changes[field])
-    # Stock is intentionally not editable here; all stock changes must create a movement.
     try:
         session.commit()
         session.refresh(product)
