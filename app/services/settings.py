@@ -16,7 +16,6 @@ def get_setting(session, key, default=""):
 
 
 def get_settings(session):
-    """Return a settings snapshot and support the UI's short-lived session wrapper."""
     wrapper = getattr(session, "session", None)
     actual = wrapper if wrapper is not None else session
     try:
@@ -42,7 +41,6 @@ def set_setting(session, key, value):
 
 
 def save_settings(session, values):
-    """Save a group of settings in one atomic transaction."""
     try:
         for key, value in values.items():
             key = str(key).strip()
