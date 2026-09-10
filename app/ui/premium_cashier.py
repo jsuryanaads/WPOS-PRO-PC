@@ -1,8 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
-    QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -123,7 +121,9 @@ def apply_premium_cashier(window):
     method_row.addWidget(_label("Metode", "premiumPayLabel"))
     window.method = QComboBox()
     window.method.setObjectName("premiumMethod")
+    window.method.blockSignals(True)
     window.method.addItems(["CASH", "QRIS", "TRANSFER", "DEBIT"])
+    window.method.blockSignals(False)
     window.method.currentTextChanged.connect(window.payment_method_changed)
     method_row.addWidget(window.method, 1)
     pay_l.addLayout(method_row)
