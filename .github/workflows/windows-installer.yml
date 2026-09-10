@@ -66,24 +66,24 @@ jobs:
       - name: Verify installer
         shell: pwsh
         run: |
-          $setup = "installer\WPOS_PRO_V1.1.2_Setup.exe"
+          $setup = "installer\WPOS_PRO_V1.1.3_Setup.exe"
           if (!(Test-Path $setup)) { throw "Installer tidak ditemukan: $setup" }
           Get-Item $setup | Format-List FullName,Length
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WPOS-PRO-V1.1.2-Installer
-          path: installer/WPOS_PRO_V1.1.2_Setup.exe
+          name: WPOS-PRO-V1.1.3-Installer
+          path: installer/WPOS_PRO_V1.1.3_Setup.exe
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish V1.1.2 release asset
+      - name: Publish V1.1.3 release asset
         if: github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create V1.1.2 --title "V1.1.2" --notes "WPOS PRO V1.1.2 — UX/UI 2026 improvements" 2>$null
+          gh release create V1.1.3 --title "V1.1.3" --notes "WPOS PRO V1.1.3 — Premium POS cashier UX refinement" 2>$null
           if ($LASTEXITCODE -ne 0) { $LASTEXITCODE = 0 }
-          gh release upload V1.1.2 installer/WPOS_PRO_V1.1.2_Setup.exe --clobber
+          gh release upload V1.1.3 installer/WPOS_PRO_V1.1.3_Setup.exe --clobber
