@@ -2,9 +2,12 @@ name: WPOS PRO Windows Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build-windows:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[BUILD V1.1.5]') }}
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -59,7 +62,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: WPOS-PRO-V1.1.4-Windows
+          name: WPOS-PRO-V1.1.5-Windows
           path: dist/WPOS PRO/
           if-no-files-found: error
           retention-days: 14
