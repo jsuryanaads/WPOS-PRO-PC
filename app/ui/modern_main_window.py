@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..config import APP_VERSION
+from .branding import LOGO_PATH
 from .main_window import MainWindow
 
 
@@ -47,25 +49,36 @@ class ModernMainWindow(MainWindow):
         sidebar = QFrame()
         sidebar.setObjectName("modernSidebar")
         side = QVBoxLayout(sidebar)
-        side.setContentsMargins(14, 18, 14, 14)
+        side.setContentsMargins(14, 16, 14, 14)
         side.setSpacing(6)
 
         brand = QFrame()
         brand.setObjectName("modernBrand")
-        brand_l = QVBoxLayout(brand)
-        brand_l.setContentsMargins(12, 12, 12, 12)
+        brand_l = QHBoxLayout(brand)
+        brand_l.setContentsMargins(10, 10, 10, 10)
+        logo = QLabel()
+        logo.setObjectName("modernBrandLogo")
+        if LOGO_PATH.exists():
+            pix = QPixmap(str(LOGO_PATH))
+            if not pix.isNull():
+                logo.setPixmap(pix.scaled(44, 44, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        brand_l.addWidget(logo)
+        brand_text = QVBoxLayout()
+        brand_text.setContentsMargins(0, 0, 0, 0)
+        brand_text.setSpacing(1)
         name = QLabel("WPOS PRO")
         name.setObjectName("modernBrandName")
         version = QLabel(f"{APP_VERSION} · POS 2026")
         version.setObjectName("modernBrandVersion")
-        brand_l.addWidget(name)
-        brand_l.addWidget(version)
+        brand_text.addWidget(name)
+        brand_text.addWidget(version)
+        brand_l.addLayout(brand_text, 1)
         side.addWidget(brand)
-        side.addSpacing(10)
+        side.addSpacing(8)
 
         self.nav_list = QListWidget()
         self.nav_list.setObjectName("modernNav")
-        self.nav_list.setSpacing(3)
+        self.nav_list.setSpacing(2)
         self.nav_list.setFrameShape(QFrame.NoFrame)
         self.nav_list.setFocusPolicy(Qt.NoFocus)
         self._nav_indexes = []
@@ -86,7 +99,8 @@ class ModernMainWindow(MainWindow):
         account = QFrame()
         account.setObjectName("modernAccount")
         al = QVBoxLayout(account)
-        al.setContentsMargins(10, 10, 10, 10)
+        al.setContentsMargins(10, 9, 10, 9)
+        al.setSpacing(3)
         user_label = QLabel(f"{self.user.username}")
         user_label.setObjectName("modernUser")
         role_label = QLabel(f"{self.user.role} · Lokal")
@@ -102,22 +116,22 @@ class ModernMainWindow(MainWindow):
         content = QFrame()
         content.setObjectName("modernContent")
         content_l = QVBoxLayout(content)
-        content_l.setContentsMargins(20, 16, 20, 12)
+        content_l.setContentsMargins(22, 18, 22, 12)
         content_l.setSpacing(10)
 
         topbar = QFrame()
         topbar.setObjectName("modernTopbar")
         top_l = QHBoxLayout(topbar)
-        top_l.setContentsMargins(14, 8, 14, 8)
+        top_l.setContentsMargins(16, 9, 16, 9)
+        top_l.setSpacing(10)
         self.modern_context = QLabel("Dashboard")
         self.modern_context.setObjectName("modernContext")
-        self.modern_hint = QLabel("Operasional toko")
+        self.modern_hint = QLabel("Ringkasan bisnis hari ini")
         self.modern_hint.setObjectName("modernHint")
         top_l.addWidget(self.modern_context)
-        top_l.addSpacing(12)
         top_l.addWidget(self.modern_hint)
         top_l.addStretch()
-        clock = QLabel("● OFFLINE · Database lokal")
+        clock = QLabel("● OFFLINE  ·  DATABASE LOKAL")
         clock.setObjectName("modernStatus")
         top_l.addWidget(clock)
         content_l.addWidget(topbar)
@@ -147,9 +161,8 @@ class ModernMainWindow(MainWindow):
         return CompatTabs(self, titles)
 
     def _legacy_navigation(self, index):
-        if index < 0 or not hasattr(self, "modern_stack"):
-            return
-        self._select_navigation(index)
+        if index >= 0 and hasattr(self, "modern_stack"):
+            self._select_navigation(index)
 
     def _select_navigation(self, page_index):
         self.modern_stack.setCurrentIndex(page_index)
@@ -193,15 +206,16 @@ class ModernMainWindow(MainWindow):
 
     def _apply_modern_style(self):
         self.setStyleSheet(self.styleSheet() + """
-        QFrame#modernSidebar { background: #111827; border: 0; }
+        QFrame#modernSidebar { background: #111827; border: 0; min-width: 230px; max-width: 250px; }
         QFrame#modernBrand { background: #1f2937; border: 1px solid #374151; border-radius: 12px; }
-        QLabel#modernBrandName { color: #ffffff; font-size: 19px; font-weight: 900; }
-        QLabel#modernBrandVersion { color: #9ca3af; font-size: 10px; font-weight: 700; }
+        QLabel#modernBrandLogo { min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; }
+        QLabel#modernBrandName { color: #ffffff; font-size: 18px; font-weight: 900; }
+        QLabel#modernBrandVersion { color: #9ca3af; font-size: 9px; font-weight: 700; }
         QListWidget#modernNav { background: transparent; color: #9ca3af; border: 0; }
-        QListWidget#modernNav::item { padding: 8px 9px; border-radius: 8px; margin: 1px 0; font-size: 12px; }
+        QListWidget#modernNav::item { padding: 9px 8px; border-radius: 8px; margin: 1px 0; font-size: 12px; }
         QListWidget#modernNav::item:hover { background: #1f2937; color: #ffffff; }
         QListWidget#modernNav::item:selected { background: #2563eb; color: #ffffff; font-weight: 800; }
-        QListWidget#modernNav::item:disabled { color: #6b7280; padding: 12px 8px 4px; font-size: 9px; font-weight: 900; }
+        QListWidget#modernNav::item:disabled { color: #6b7280; padding: 11px 8px 4px; font-size: 9px; font-weight: 900; }
         QFrame#modernAccount { background: #1f2937; border: 1px solid #374151; border-radius: 10px; }
         QLabel#modernUser { color: #ffffff; font-weight: 800; }
         QLabel#modernRole { color: #9ca3af; font-size: 10px; }
@@ -209,9 +223,15 @@ class ModernMainWindow(MainWindow):
         QPushButton#modernLogout:hover { background: #4b5563; }
         QFrame#modernContent { background: #f5f7fb; }
         QFrame#modernTopbar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; }
-        QLabel#modernContext { color: #111827; font-size: 14px; font-weight: 900; }
+        QLabel#modernContext { color: #111827; font-size: 15px; font-weight: 900; }
         QLabel#modernHint { color: #6b7280; font-size: 11px; }
-        QLabel#modernStatus { color: #15803d; font-size: 10px; font-weight: 800; }
+        QLabel#modernStatus { color: #15803d; font-size: 9px; font-weight: 800; }
         QStackedWidget#modernStack { background: transparent; border: 0; }
+        QGroupBox { border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; }
+        QLineEdit, QDoubleSpinBox, QComboBox, QTextEdit, QSpinBox { min-height: 32px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        QPushButton { border-radius: 8px; padding: 8px 14px; }
+        QTableWidget { border-radius: 10px; border: 1px solid #e2e8f0; }
+        QHeaderView::section { padding: 9px; border: 0; font-weight: 800; }
         """)
         self.setWindowTitle(f"WPOS PRO {APP_VERSION}")
+        self.setMinimumSize(1180, 720)
