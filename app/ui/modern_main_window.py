@@ -227,11 +227,30 @@ class ModernMainWindow(MainWindow):
         QLabel#modernHint { color: #6b7280; font-size: 11px; }
         QLabel#modernStatus { color: #15803d; font-size: 9px; font-weight: 800; }
         QStackedWidget#modernStack { background: transparent; border: 0; }
-        QGroupBox { border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; }
-        QLineEdit, QDoubleSpinBox, QComboBox, QTextEdit, QSpinBox { min-height: 32px; border-radius: 8px; border: 1px solid #cbd5e1; }
-        QPushButton { border-radius: 8px; padding: 8px 14px; }
-        QTableWidget { border-radius: 10px; border: 1px solid #e2e8f0; }
-        QHeaderView::section { padding: 9px; border: 0; font-weight: 800; }
+
+        QWidget#modernStack QWidget { font-size: 11px; }
+        QGroupBox { margin-top: 12px; padding: 16px 12px 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; font-weight: 800; }
+        QGroupBox::title { subcontrol-origin: margin; left: 14px; top: 2px; padding: 0 7px; color: #334155; background: #ffffff; }
+        QLineEdit, QDoubleSpinBox, QComboBox, QTextEdit, QSpinBox { min-height: 34px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 4px 9px; background: #ffffff; }
+        QLineEdit:focus, QDoubleSpinBox:focus, QComboBox:focus, QTextEdit:focus, QSpinBox:focus { border: 1px solid #2563eb; }
+        QPushButton { min-height: 34px; border-radius: 8px; padding: 7px 14px; font-weight: 700; }
+        QPushButton:hover { background: #eff6ff; }
+        QPushButton:pressed { padding-top: 8px; }
+        QTableWidget { border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; gridline-color: #eef2f7; alternate-background-color: #f8fafc; selection-background-color: #dbeafe; selection-color: #0f172a; }
+        QTableWidget::item { padding: 7px; }
+        QHeaderView::section { padding: 9px 8px; border: 0; border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 800; }
+        QScrollBar:vertical { width: 9px; margin: 2px; background: transparent; }
+        QScrollBar::handle:vertical { min-height: 30px; border-radius: 4px; background: #cbd5e1; }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        QLabel#pageTitle { font-size: 24px; font-weight: 900; color: #0f172a; }
+        QLabel#pageSubtitle { color: #64748b; font-size: 11px; }
+        QFrame#card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; }
+        QLabel#cardTitle { color: #64748b; font-size: 10px; font-weight: 800; }
+        QLabel#cardValue { color: #0f172a; font-size: 22px; font-weight: 900; }
+        QLabel#total { color: #1d4ed8; font-size: 22px; font-weight: 900; }
+        QPushButton#primary { background: #2563eb; color: #ffffff; border: 0; min-height: 40px; font-weight: 900; }
+        QPushButton#primary:hover { background: #1d4ed8; }
+        QPushButton#danger { background: #fee2e2; color: #b91c1c; border: 0; }
         """)
         self.setWindowTitle(f"WPOS PRO {APP_VERSION}")
         self.setMinimumSize(1180, 720)
