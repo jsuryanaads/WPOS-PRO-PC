@@ -1,14 +1,24 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from ..models import Sale, SaleItem, Product, StockMovement, CashMovement
 
 PAYMENT_METHODS = {"CASH", "QRIS", "TRANSFER", "DEBIT"}
 
 
+def _decimal(value, label):
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        raise ValueError(f"{label} tidak valid")
+    if not result.is_finite():
+        raise ValueError(f"{label} tidak valid")
+    return result
+
+
 def create_sale(session, items, discount, paid, payment_method, invoice_no):
     if not items:
         raise ValueError("Keranjang kosong")
-    discount = Decimal(str(discount))
-    paid = Decimal(str(paid))
+    discount = _decimal(discount, "Diskon")
+    paid = _decimal(paid, "Pembayaran")
     payment_method = str(payment_method).upper().strip()
     invoice_no = str(invoice_no).strip()
     if not invoice_no:
@@ -26,7 +36,7 @@ def create_sale(session, items, discount, paid, payment_method, invoice_no):
     try:
         for row in items:
             product_id = int(row["product_id"])
-            qty = Decimal(str(row["quantity"]))
+            qty = _decimal(row["quantity"], "Jumlah")
             if qty <= 0:
                 raise ValueError("Jumlah tidak valid")
             product = session.get(Product, product_id)
