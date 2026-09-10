@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from html import escape
 from math import ceil
@@ -128,6 +129,70 @@ def receipt_html(sale, items, settings):
     """
 
 
+def printer_test_html(settings, paper, printer_name, invoice_no="INV-00001"):
+    """Build the fixed sample receipt used by the Print Test page."""
+    profile = _profile(paper)
+    width = profile["printable_width_mm"]
+    store_name = escape(str(settings.get("store_name", "TOKO SEMBAKO")))
+    address = escape(str(settings.get("store_address", "Alamat toko"))) or "Alamat toko"
+    footer = escape(str(settings.get("receipt_footer", "Terima kasih"))) or "Terima kasih"
+    now = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    items = [
+        ("Indomie", 2, Decimal("3500")),
+        ("Teh", 1, Decimal("5000")),
+    ]
+    total = sum((qty * price for _, qty, price in items), Decimal("0"))
+    paid = Decimal("20000")
+    change = paid - total
+
+    item_rows = []
+    for name, qty, price in items:
+        subtotal = qty * price
+        item_rows.append(
+            "<tr>"
+            f"<td class='name'>{escape(name)}</td>"
+            f"<td class='qty'>{qty}</td>"
+            f"<td class='price'>x {price:,.0f}</td>"
+            f"<td class='amount'>{subtotal:,.0f}</td>"
+            "</tr>"
+        )
+
+    return f"""
+    <html><head><style>
+    body {{ width:{width}mm; font-family:'Courier New',monospace; font-size:{profile['font_size_pt']}pt;
+           margin:0; padding:0; color:#000; }}
+    .center {{ text-align:center; }}
+    .line {{ margin:4px 0; border-top:1px dashed #000; height:0; }}
+    table {{ width:100%; border-collapse:collapse; table-layout:fixed; }}
+    td {{ padding:0; white-space:nowrap; overflow:hidden; }}
+    .name {{ width:30%; text-align:left; }}
+    .qty {{ width:8%; text-align:right; }}
+    .price {{ width:32%; text-align:right; }}
+    .amount {{ width:30%; text-align:right; }}
+    .label {{ width:60%; text-align:left; }}
+    .value {{ width:40%; text-align:right; }}
+    p {{ margin:2px 0; }}
+    h3 {{ margin:0 0 3px 0; }}
+    </style></head><body>
+    <div class='center'><h3>{store_name}</h3><p>{address}</p></div>
+    <div class='line'></div>
+    <p>No: {escape(invoice_no)}</p>
+    <p>{now}</p>
+    <div class='line'></div>
+    <table>{''.join(item_rows)}</table>
+    <div class='line'></div>
+    <table>
+      <tr><td class='label'><b>TOTAL</b></td><td class='value'><b>{total:,.0f}</b></td></tr>
+      <tr><td class='label'>Bayar</td><td class='value'>{paid:,.0f}</td></tr>
+      <tr><td class='label'>Kembalian</td><td class='value'>{change:,.0f}</td></tr>
+    </table>
+    <div class='line'></div>
+    <p class='center'>{footer}</p>
+    </body></html>
+    """
+
+
 def _print_document(printer, document):
     """Print an already-laid-out QTextDocument."""
     document.print_(printer)
@@ -161,27 +226,21 @@ def print_receipt(parent, sale, items):
 
 
 def test_print(parent, printer_name="", paper="58mm"):
+    """Print the standard WPOS PRO sample receipt for printer verification."""
+    from ..database import SessionLocal
+
+    with SessionLocal() as session:
+        settings = get_settings(session)
+
+    paper = str(paper).lower() if str(paper).lower() in RECEIPT_PROFILES else "58mm"
     profile = _profile(paper)
     printer = QPrinter(QPrinter.HighResolution)
     if printer_name:
         printer.setPrinterName(printer_name)
 
-    html = (
-        "<html><head><style>"
-        f"body{{width:{profile['printable_width_mm']}mm;"
-        f"font-family:'Courier New',monospace;font-size:{profile['font_size_pt']}pt;"
-        "margin:0;padding:0;text-align:center;}}"
-        "</style></head><body>"
-        "<h3>WPOS PRO</h3>"
-        "<p>TES CETAK BERHASIL</p>"
-        f"<p>Kertas: {escape(str(paper))}</p>"
-        f"<p>Area cetak: {profile['printable_width_mm']:.0f} mm</p>"
-        f"<p>Target: ~{profile['cpl_hint']} CPL</p>"
-        f"<p>Printer: {escape(str(printer.printerName()))}</p>"
-        "</body></html>"
-    )
+    html = printer_test_html(settings, paper, printer_name or printer.printerName())
     document = _render_document(html, profile["printable_width_mm"])
-    height_mm = _document_height_mm(document, minimum_mm=40.0)
+    height_mm = _document_height_mm(document, minimum_mm=45.0)
     _configure_receipt_page(printer, paper, height_mm)
 
     dialog = QPrintDialog(printer, parent)
