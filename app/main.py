@@ -6,6 +6,7 @@ from .ui.login import LoginWindow
 from .ui.main_window import MainWindow
 from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
+from .ui.polish import apply_ui_polish
 
 
 def main():
@@ -17,10 +18,9 @@ def main():
 
     def success(user):
         window = MainWindow(user)
+        apply_ui_polish(window)
         holder["main"] = window
 
-        # User administration is intentionally available only to ADMIN.
-        # It is kept as a separate dialog so the existing POS tab layout is not disturbed.
         if str(user.role).upper() == "ADMIN":
             menu = window.menuBar().addMenu("Administrasi")
             action = menu.addAction("Manajemen User")
