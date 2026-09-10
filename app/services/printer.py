@@ -1,7 +1,7 @@
 from decimal import Decimal
 from html import escape
 
-from PySide6.QtCore import QMarginsF
+from PySide6.QtCore import QMarginsF, QSizeF
 from PySide6.QtGui import QPageLayout, QPageSize, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrinterInfo, QPrintDialog
 
@@ -43,10 +43,10 @@ def _configure_receipt_page(printer, paper):
     profile = _profile(paper)
     width = profile["paper_width_mm"]
 
-    # QPrinter/QTextDocument is page based, so use a sufficiently long page.
-    # Long receipts are paginated instead of being clipped at a fixed height.
+    # PySide6 exposes the size constructor through QSizeF rather than
+    # QPageSize.SizeF. This is compatible with current Qt 6 bindings.
     page_size = QPageSize(
-        QPageSize.SizeF(width, 200.0),
+        QSizeF(width, 200.0),
         QPageSize.Millimeter,
         f"WPOS {paper} Receipt",
         QPageSize.ExactSize,
