@@ -1,4 +1,4 @@
-# WPOS PRO V1.1.5
+# WPOS PRO V1.1.6
 
 Modern POS 2026 untuk toko sembako Windows offline, satu komputer.
 
@@ -45,7 +45,7 @@ Barcode → Keranjang → Diskon → Pembayaran → Kembalian → Stok berkurang
 - Perubahan kecil: patch version.
 - Perubahan menengah: naik ke target minor patch sesuai aturan proyek.
 - Perubahan besar: naik ke versi minor baru.
-- V1.1.5 adalah milestone stabilisasi dan packaging setelah audit source, UI/navigation, database refresh, role consistency, edge cases, dan CI.
+- **V1.1.6** adalah milestone UI/UX hardening: unified visual system, konsistensi halaman/dialog, focus state, keyboard navigation sidebar, accessibility metadata, dan release validation tanpa mengubah business logic transaksi.
 
 ## Default login
 - Username: `admin`
@@ -61,16 +61,8 @@ Saat dijalankan sebagai EXE, database dan backup disimpan di `%LOCALAPPDATA%\\WP
 python -m app.main
 ```
 
-## Testing
-```bat
-pytest -q
-```
-
-## Build EXE
-Jalankan `build.bat` pada Windows dengan Python dan PyInstaller terpasang.
-
-## Installer
-Compile `installer.iss` menggunakan Inno Setup setelah EXE berhasil dibuat.
-
-## Status
-WPOS PRO V1.1.5 final packaging candidate: source audited, CI passed, Windows EXE icon-verified, installer built, and shortcut smoke verification is the final release gate.
+## Release gate V1.1.6
+- Source compile/test harus PASS.
+- Windows packaging harus PASS.
+- Branding/icon verification harus PASS.
+- Visual smoke test pada Windows tetap menjadi validasi akhir sebelum merge/release production.
