@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget, QLabel, QDialog, QMessageBox
 
 
 WPOS_UNIFIED_QSS = """
@@ -89,17 +89,37 @@ QLabel#modernContext { color: #0f172a; font-size: 17px; font-weight: 900; }
 QLabel#modernHint { color: #64748b; font-size: 10px; }
 QLabel#modernStatusOffline { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
 QLabel#modernStatusLocal { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
+
+/* UX 9/10 completion layer */
+QMessageBox { background: #ffffff; }
+QMessageBox QLabel { color: #0f172a; font-size: 11px; }
+QMessageBox QPushButton { min-width: 82px; }
+QDialog QLabel { color: #0f172a; }
+QToolBar { background: #ffffff; border: 0; spacing: 6px; padding: 4px 8px; }
+QCheckBox, QRadioButton { spacing: 7px; color: #334155; min-height: 28px; }
+QCheckBox:disabled, QRadioButton:disabled { color: #94a3b8; }
+QToolButton { background: transparent; border: 0; border-radius: 7px; padding: 6px 9px; }
+QToolButton:hover { background: #eff6ff; color: #1d4ed8; }
+QListWidget, QTreeWidget { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px; outline: none; }
+QListWidget::item, QTreeWidget::item { padding: 7px 8px; border-radius: 6px; }
+QListWidget::item:hover, QTreeWidget::item:hover { background: #f8fafc; }
+QListWidget::item:selected, QTreeWidget::item:selected { background: #dbeafe; color: #1e3a8a; }
+QProgressBar { background: #f1f5f9; border: 0; border-radius: 6px; text-align: center; min-height: 12px; color: #334155; }
+QProgressBar::chunk { background: #2563eb; border-radius: 6px; }
 """
 
 
 def apply_unified_ui(window):
-    """Apply one visual system to every WPOS window without touching business logic."""
+    """Apply the final WPOS visual system without changing business logic."""
     app = QApplication.instance()
     if app:
         app.setFont(QFont("Segoe UI", 10))
+
     existing = window.styleSheet()
     window.setStyleSheet(existing + WPOS_UNIFIED_QSS)
     window.setAttribute(Qt.WA_StyledBackground, True)
+
+    # Tables: predictable density, selection and scanning behavior.
     for table in window.findChildren(QTableWidget):
         table.setAlternatingRowColors(True)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -108,3 +128,22 @@ def apply_unified_ui(window):
         table.setWordWrap(False)
         table.verticalHeader().setVisible(False)
         table.verticalHeader().setDefaultSectionSize(32)
+        table.setFocusPolicy(Qt.StrongFocus)
+
+    # Modern shell already supplies the page title. Hide duplicated legacy
+    # page headers so every page has one clear title/hint hierarchy.
+    for title in window.findChildren(QLabel, "pageTitle"):
+        parent = title.parentWidget()
+        if parent is not None:
+            parent.hide()
+    for subtitle in window.findChildren(QLabel, "pageSubtitle"):
+        subtitle.hide()
+
+    # Consistent keyboard focus behavior for actionable controls.
+    for widget in window.findChildren(QPushButton):
+        widget.setFocusPolicy(Qt.StrongFocus)
+
+    # Give dialogs the same visual language while retaining their existing
+    # dimensions and behavior.
+    if isinstance(window, QDialog):
+        window.setAttribute(Qt.WA_StyledBackground, True)
