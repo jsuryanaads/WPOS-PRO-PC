@@ -82,7 +82,9 @@ class ModernMainWindow(MainWindow):
         self.nav_list.setObjectName("modernNav")
         self.nav_list.setSpacing(2)
         self.nav_list.setFrameShape(QFrame.NoFrame)
-        self.nav_list.setFocusPolicy(Qt.NoFocus)
+        self.nav_list.setFocusPolicy(Qt.StrongFocus)
+        self.nav_list.setTabKeyNavigation(True)
+        self.nav_list.setAccessibleName("Navigasi utama WPOS PRO")
         self._nav_indexes = []
         for section, entries in self.NAVIGATION:
             header = QListWidgetItem(section)
@@ -93,6 +95,7 @@ class ModernMainWindow(MainWindow):
                 item = QListWidgetItem(f"  {icon}   {title}")
                 item.setData(Qt.UserRole, index)
                 item.setToolTip(title)
+                item.setAccessibleText(title)
                 self.nav_list.addItem(item)
                 self._nav_indexes.append(index)
         self.nav_list.currentItemChanged.connect(self._navigate)
@@ -111,6 +114,8 @@ class ModernMainWindow(MainWindow):
         al.addWidget(role_label)
         logout = QPushButton("Keluar")
         logout.setObjectName("modernLogout")
+        logout.setAccessibleName("Keluar dari WPOS PRO")
+        logout.setToolTip("Keluar dari aplikasi")
         logout.clicked.connect(self.logout)
         al.addWidget(logout)
         side.addWidget(account)
@@ -285,6 +290,7 @@ class ModernMainWindow(MainWindow):
         QListWidget#modernNav::item:hover { background: #151f32; color: #ffffff; }
         QListWidget#modernNav::item:selected { background: #2563eb; color: #ffffff; font-weight: 800; }
         QListWidget#modernNav::item:disabled { color: #64748b; padding: 11px 8px 4px; font-size: 9px; font-weight: 900; }
+        QListWidget#modernNav:focus { border: 1px solid #3b82f6; border-radius: 10px; }
         QFrame#modernAccount { background: #151f32; border: 1px solid #263550; border-radius: 12px; }
         QLabel#modernUser { color: #ffffff; font-weight: 800; }
         QLabel#modernRole { color: #94a3b8; font-size: 10px; }
@@ -297,7 +303,6 @@ class ModernMainWindow(MainWindow):
         QLabel#modernStatusOffline { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
         QLabel#modernStatusLocal { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px; padding: 5px 9px; font-size: 9px; font-weight: 900; }
         QStackedWidget#modernStack { background: transparent; border: 0; }
-
         QWidget#modernStack QWidget { font-size: 11px; }
         QGroupBox { margin-top: 12px; padding: 16px 12px 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; font-weight: 800; }
         QGroupBox::title { subcontrol-origin: margin; left: 14px; top: 2px; padding: 0 7px; color: #334155; background: #ffffff; }
@@ -309,54 +314,4 @@ class ModernMainWindow(MainWindow):
         QTableWidget { border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; gridline-color: #eef2f7; alternate-background-color: #f8fafc; selection-background-color: #dbeafe; selection-color: #0f172a; }
         QTableWidget::item { padding: 7px; }
         QHeaderView::section { padding: 9px 8px; border: 0; border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 800; }
-        QScrollBar:vertical { width: 9px; margin: 2px; background: transparent; }
-        QScrollBar::handle:vertical { min-height: 30px; border-radius: 4px; background: #cbd5e1; }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QLabel#pageTitle { font-size: 24px; font-weight: 900; color: #0f172a; }
-        QLabel#pageSubtitle { color: #64748b; font-size: 11px; }
-        QFrame#card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; }
-        QLabel#cardTitle { color: #64748b; font-size: 10px; font-weight: 800; }
-        QLabel#cardValue { color: #0f172a; font-size: 22px; font-weight: 900; }
-        QLabel#dashboardMetricIcon { min-width: 28px; max-width: 28px; min-height: 28px; max-height: 28px; padding: 3px; border-radius: 8px; background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 900; qproperty-alignment: AlignCenter; }
-        QLabel#total { color: #1d4ed8; font-size: 22px; font-weight: 900; }
-        QPushButton#primary { background: #2563eb; color: #ffffff; border: 0; min-height: 40px; font-weight: 900; }
-        QPushButton#primary:hover { background: #1d4ed8; }
-        QPushButton#danger { background: #fee2e2; color: #b91c1c; border: 0; }
-        QPushButton#dashboardPrimary { background: #2563eb; color: #ffffff; border: 0; min-height: 38px; border-radius: 9px; font-weight: 900; }
-        QPushButton#dashboardPrimary:hover { background: #1d4ed8; }
-        QPushButton#dashboardSecondary { background: #0f766e; color: #ffffff; border: 0; min-height: 38px; border-radius: 9px; font-weight: 900; }
-        QPushButton#dashboardSecondary:hover { background: #0d9488; }
-        QPushButton#dashboardGhost { background: #ffffff; color: #334155; border: 1px solid #dbe3ec; min-height: 38px; border-radius: 9px; }
-        QPushButton#dashboardGhost:hover { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-
-        /* Premium POS cashier */
-        QLabel#premiumPageTitle { color: #0f172a; font-size: 24px; font-weight: 950; }
-        QLabel#premiumPageSubtitle { color: #64748b; font-size: 11px; }
-        QLabel#premiumShortcut { color: #64748b; font-size: 9px; font-weight: 700; }
-        QFrame#premiumScanCard { background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; }
-        QLabel#premiumFieldCaption { color: #94a3b8; font-size: 9px; font-weight: 900; letter-spacing: 1px; }
-        QLineEdit#premiumBarcode { min-height: 46px; border: 2px solid #334155; border-radius: 10px; background: #ffffff; color: #0f172a; font-size: 15px; font-weight: 700; padding: 5px 13px; }
-        QLineEdit#premiumBarcode:focus { border: 2px solid #3b82f6; }
-        QDoubleSpinBox#premiumQty { min-height: 46px; min-width: 88px; border-radius: 10px; background: #ffffff; font-size: 13px; font-weight: 800; }
-        QPushButton#premiumAdd { min-height: 46px; border-radius: 10px; background: #2563eb; color: #ffffff; padding: 0 18px; font-weight: 900; }
-        QPushButton#premiumAdd:hover { background: #3b82f6; }
-        QFrame#premiumCartCard, QFrame#premiumPayCard { background: #ffffff; border: 1px solid #dfe6ef; border-radius: 14px; }
-        QLabel#premiumSectionTitle { color: #0f172a; font-size: 13px; font-weight: 900; }
-        QLabel#premiumMuted { color: #94a3b8; font-size: 8px; font-weight: 800; }
-        QTableWidget#premiumCartTable { border: 0; border-top: 1px solid #e8edf4; border-radius: 0; gridline-color: #f0f3f7; }
-        QTableWidget#premiumCartTable QHeaderView::section { background: #ffffff; color: #64748b; padding: 10px 8px; border-bottom: 1px solid #e8edf4; font-size: 9px; }
-        QFrame#premiumTotalBox { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; }
-        QLabel#premiumTotalCaption { color: #2563eb; font-size: 9px; font-weight: 900; }
-        QLabel#premiumTotal { color: #1d4ed8; font-size: 29px; font-weight: 950; }
-        QLabel#premiumPayLabel { color: #475569; font-size: 10px; font-weight: 800; min-width: 45px; }
-        QDoubleSpinBox#premiumMoneyInput, QComboBox#premiumMethod { min-height: 38px; border-radius: 9px; font-weight: 800; }
-        QFrame#premiumChangeBox { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
-        QLabel#premiumChangeCaption { color: #64748b; font-size: 8px; font-weight: 900; }
-        QLabel#premiumChange { color: #0f766e; font-size: 20px; font-weight: 950; }
-        QPushButton#premiumCheckout { background: #0f766e; color: #ffffff; border: 0; border-radius: 10px; font-size: 12px; font-weight: 950; }
-        QPushButton#premiumCheckout:hover { background: #0d9488; }
-        QPushButton#premiumClear { background: #f1f5f9; color: #475569; border: 1px solid #dbe3ec; border-radius: 10px; }
-        QPushButton#premiumClear:hover { background: #e2e8f0; }
         """)
-        self.setWindowTitle(f"WPOS PRO {APP_VERSION}")
-        self.setMinimumSize(1180, 720)
