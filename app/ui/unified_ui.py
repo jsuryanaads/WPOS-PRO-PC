@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget, QLabel, QDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget, QLabel, QDialog, QMessageBox, QPushButton
 
 
 WPOS_UNIFIED_QSS = """
