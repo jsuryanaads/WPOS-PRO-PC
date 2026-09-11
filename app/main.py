@@ -1,11 +1,11 @@
 import sys
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QListWidgetItem
 from PySide6.QtGui import QIcon
 from .config import APP_VERSION
 from .database import init_db
 from .ui.login import LoginWindow
 from .ui.modern_main_window import ModernMainWindow
-from .ui.user_management import UserManagementDialog
+from .ui.user_management import UserManagementPage
 from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
 from .ui.ux2026 import apply_ux2026
@@ -52,10 +52,16 @@ def main():
         refresh_ui(window)
         holder["main"] = window
 
+        # Administration is a normal page in the same QStackedWidget.
+        # No secondary dialog/window is opened for user management.
         if str(user.role).upper() == "ADMIN":
-            menu = window.menuBar().addMenu("Administrasi")
-            action = menu.addAction("Manajemen User")
-            action.triggered.connect(lambda: UserManagementDialog(user, window).exec())
+            admin_page = UserManagementPage(user, window)
+            admin_index = window.modern_stack.addWidget(admin_page)
+            window.tabs.titles.append("Manajemen User")
+            admin_item = QListWidgetItem("  ⚙   Manajemen User")
+            admin_item.setData(256, admin_index)  # Qt.UserRole without importing Qt here.
+            admin_item.setToolTip("Kelola akun dan akses pengguna")
+            window.nav_list.addItem(admin_item)
 
         window.show()
 
