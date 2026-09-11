@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QDialog, QMainWindow, QTableWidget
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget
 
 
 WPOS_UNIFIED_QSS = """
@@ -15,18 +15,15 @@ QMenu::item { padding: 7px 22px 7px 10px; border-radius: 5px; }
 QMenu::item:selected { background: #eff6ff; color: #1d4ed8; }
 QStatusBar { background: #ffffff; color: #64748b; border-top: 1px solid #e2e8f0; min-height: 25px; }
 QStatusBar::item { border: 0; }
-
 QGroupBox { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 12px; padding: 18px 12px 12px; font-weight: 800; }
 QGroupBox::title { subcontrol-origin: margin; left: 13px; top: 1px; padding: 0 7px; background: #ffffff; color: #334155; }
 QFrame#card, QFrame#premiumScanCard, QFrame#premiumCartCard, QFrame#premiumPayCard { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; }
-
 QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QTextEdit { background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; padding: 5px 9px; min-height: 34px; selection-background-color: #bfdbfe; }
 QLineEdit:hover, QComboBox:hover, QDoubleSpinBox:hover, QSpinBox:hover, QTextEdit:hover { border-color: #94a3b8; }
 QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus, QTextEdit:focus { border: 2px solid #2563eb; padding: 4px 8px; }
 QLineEdit:disabled, QComboBox:disabled, QDoubleSpinBox:disabled, QSpinBox:disabled { background: #f1f5f9; color: #94a3b8; }
 QAbstractItemView { background: #ffffff; color: #0f172a; border: 1px solid #dbe3ec; selection-background-color: #dbeafe; selection-color: #0f172a; outline: none; }
 QComboBox::drop-down { border: 0; width: 26px; }
-
 QPushButton { background: #ffffff; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; min-height: 34px; font-weight: 700; }
 QPushButton:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 QPushButton:pressed { background: #dbeafe; }
@@ -37,7 +34,6 @@ QPushButton#dashboardSecondary { background: #0f766e; color: #ffffff; border: 0;
 QPushButton#dashboardSecondary:hover { background: #0d9488; color: #ffffff; }
 QPushButton#danger, QPushButton#premiumClear { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
 QPushButton#danger:hover, QPushButton#premiumClear:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; }
-
 QTableWidget { background: #ffffff; alternate-background-color: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 10px; gridline-color: #eef2f7; selection-background-color: #dbeafe; selection-color: #0f172a; }
 QTableWidget::item { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; }
 QTableWidget::item:hover { background: #f8fafc; }
@@ -48,13 +44,11 @@ QScrollBar::handle:vertical:hover { background: #94a3b8; }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 QScrollBar:horizontal { height: 9px; background: transparent; margin: 2px; }
 QScrollBar::handle:horizontal { background: #cbd5e1; border-radius: 4px; min-width: 32px; }
-
 QTabWidget::pane { border: 0; background: #f8fafc; }
 QTabBar::tab { background: #f1f5f9; color: #64748b; border: 0; border-radius: 7px; padding: 8px 13px; margin-right: 3px; }
 QTabBar::tab:hover { background: #e2e8f0; color: #334155; }
 QTabBar::tab:selected { background: #2563eb; color: #ffffff; font-weight: 800; }
 QToolTip { background: #0f172a; color: #ffffff; border: 0; padding: 6px 8px; border-radius: 5px; }
-
 QLabel#pageTitle { color: #0f172a; font-size: 23px; font-weight: 900; }
 QLabel#pageSubtitle { color: #64748b; font-size: 11px; }
 QLabel#cardTitle { color: #64748b; font-size: 10px; font-weight: 800; }
@@ -74,7 +68,6 @@ QPushButton#premiumAdd:hover, QPushButton#premiumCheckout:hover { background: #1
 QLineEdit#premiumBarcode { min-height: 42px; font-size: 14px; font-weight: 700; }
 QDoubleSpinBox#premiumQty { min-height: 42px; min-width: 85px; }
 QDoubleSpinBox#premiumMoneyInput { min-height: 38px; font-size: 12px; font-weight: 700; }
-
 QDialog#loginWindow { background: #0b1220; }
 QFrame#loginCard { background: #ffffff; border: 1px solid #dbe3ec; border-radius: 18px; }
 QLabel#loginTitle { color: #0f172a; font-size: 24px; font-weight: 900; }
@@ -86,7 +79,6 @@ QPushButton#loginPrimaryButton { min-height: 46px; background: #2563eb; color: #
 QPushButton#loginPrimaryButton:hover { background: #1d4ed8; }
 QPushButton#loginSecondaryButton { min-height: 44px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
 QLabel#loginFooter { color: #94a3b8; font-size: 9px; }
-
 QFrame#modernSidebar { background: #0b1220; }
 QFrame#modernBrand, QFrame#modernAccount { background: #151f32; border: 1px solid #263550; border-radius: 12px; }
 QListWidget#modernNav::item { padding: 9px 8px; border-radius: 8px; color: #94a3b8; }
@@ -108,11 +100,10 @@ def apply_unified_ui(window):
     existing = window.styleSheet()
     window.setStyleSheet(existing + WPOS_UNIFIED_QSS)
     window.setAttribute(Qt.WA_StyledBackground, True)
-
     for table in window.findChildren(QTableWidget):
         table.setAlternatingRowColors(True)
-        table.setSelectionBehavior(QTableWidget.SelectRows)
-        table.setSelectionMode(QTableWidget.SingleSelection)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
         table.setShowGrid(False)
         table.setWordWrap(False)
         table.verticalHeader().setVisible(False)
