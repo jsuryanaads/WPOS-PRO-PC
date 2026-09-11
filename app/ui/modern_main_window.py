@@ -58,6 +58,7 @@ class ModernMainWindow(MainWindow):
         brand.setObjectName("modernBrand")
         brand_l = QHBoxLayout(brand)
         brand_l.setContentsMargins(10, 10, 10, 10)
+        brand_l.setSpacing(8)
         logo = QLabel()
         logo.setObjectName("modernBrandLogo")
         if LOGO_PATH.exists():
@@ -314,4 +315,5 @@ class ModernMainWindow(MainWindow):
         QTableWidget { border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; gridline-color: #eef2f7; alternate-background-color: #f8fafc; selection-background-color: #dbeafe; selection-color: #0f172a; }
         QTableWidget::item { padding: 7px; }
         QHeaderView::section { padding: 9px 8px; border: 0; border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 800; }
+        QToolTip { background: #0f172a; color: #ffffff; border: 0; padding: 6px 8px; }
         """)
