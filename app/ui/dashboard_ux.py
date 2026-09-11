@@ -62,11 +62,12 @@ class _EmptyTableOverlay(QObject):
         self.label.setVisible(empty)
         if empty:
             margin = 12
+            header_h = self.table.horizontalHeader().height()
             self.label.setGeometry(
                 margin,
-                self.table.horizontalHeader().height() + margin,
+                header_h + margin,
                 max(0, self.table.viewport().width() - margin * 2),
-                max(42, self.table.viewport().height() - self.table.horizontalHeader().height() - margin * 2),
+                max(42, self.table.viewport().height() - header_h - margin * 2),
             )
 
     def eventFilter(self, obj, event):
@@ -75,11 +76,25 @@ class _EmptyTableOverlay(QObject):
         return False
 
 
+def _dashboard_table_kind(table):
+    headers = []
+    for col in range(table.columnCount()):
+        item = table.horizontalHeaderItem(col)
+        headers.append(item.text().strip().lower() if item else "")
+    if headers == ["invoice", "waktu", "metode", "total"]:
+        return "dashboard_sales"
+    if headers == ["produk", "stok", "status"]:
+        return "dashboard_low"
+    return None
+
+
 def apply_dashboard_ux(window):
     """Refine dashboard presentation without changing business logic."""
     window.setStyleSheet(window.styleSheet() + DASHBOARD_UX_QSS)
     for table in window.findChildren(QTableWidget):
-        if table.objectName() in ("dashboard_sales", "dashboard_low"):
+        kind = _dashboard_table_kind(table)
+        if kind:
+            table.setObjectName(kind)
             if not table.property("wpos_empty_overlay"):
                 overlay = _EmptyTableOverlay(table)
                 table.setProperty("wpos_empty_overlay", True)
