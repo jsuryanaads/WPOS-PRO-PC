@@ -1,7 +1,27 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QColor, QBrush
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableWidget, QLabel, QDialog, QMessageBox, QPushButton
 
+
+# Single source of truth for the WPOS PRO visual color system.
+WPOS_COLORS = {
+    "primary": "#2563EB",
+    "primary_dark": "#1D4ED8",
+    "success": "#16A34A",
+    "success_soft": "#F0FDF4",
+    "warning": "#D97706",
+    "warning_soft": "#FFF7ED",
+    "danger": "#DC2626",
+    "danger_soft": "#FFF1F2",
+    "info": "#0891B2",
+    "info_soft": "#ECFEFF",
+    "background": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "border": "#E2E8F0",
+    "text": "#0F172A",
+    "muted": "#64748B",
+    "sidebar": "#0B1220",
+}
 
 WPOS_UNIFIED_QSS = """
 /* WPOS PRO 2026 — unified visual language */
@@ -28,12 +48,16 @@ QPushButton { background: #ffffff; color: #334155; border: 1px solid #cbd5e1; bo
 QPushButton:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 QPushButton:pressed { background: #dbeafe; }
 QPushButton:disabled { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
-QPushButton#primary, QPushButton#dashboardPrimary { background: #2563eb; color: #ffffff; border: 0; font-weight: 800; }
-QPushButton#primary:hover, QPushButton#dashboardPrimary:hover { background: #1d4ed8; color: #ffffff; }
+QPushButton#primary, QPushButton#dashboardPrimary, QPushButton[variant="primary"] { background: #2563eb; color: #ffffff; border: 0; font-weight: 800; }
+QPushButton#primary:hover, QPushButton#dashboardPrimary:hover, QPushButton[variant="primary"]:hover { background: #1d4ed8; color: #ffffff; }
+QPushButton[variant="success"] { background: #16a34a; color: #ffffff; border: 0; font-weight: 800; }
+QPushButton[variant="success"]:hover { background: #15803d; color: #ffffff; }
+QPushButton[variant="info"] { background: #0891b2; color: #ffffff; border: 0; font-weight: 800; }
+QPushButton[variant="info"]:hover { background: #0e7490; color: #ffffff; }
 QPushButton#dashboardSecondary { background: #0f766e; color: #ffffff; border: 0; font-weight: 800; }
 QPushButton#dashboardSecondary:hover { background: #0d9488; color: #ffffff; }
-QPushButton#danger, QPushButton#premiumClear { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
-QPushButton#danger:hover, QPushButton#premiumClear:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; }
+QPushButton#danger, QPushButton#premiumClear, QPushButton[variant="danger"] { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+QPushButton#danger:hover, QPushButton#premiumClear:hover, QPushButton[variant="danger"]:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; }
 QTableWidget { background: #ffffff; alternate-background-color: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 10px; gridline-color: #eef2f7; selection-background-color: #dbeafe; selection-color: #0f172a; }
 QTableWidget::item { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; }
 QTableWidget::item:hover { background: #f8fafc; }
@@ -106,7 +130,51 @@ QListWidget::item:hover, QTreeWidget::item:hover { background: #f8fafc; }
 QListWidget::item:selected, QTreeWidget::item:selected { background: #dbeafe; color: #1e3a8a; }
 QProgressBar { background: #f1f5f9; border: 0; border-radius: 6px; text-align: center; min-height: 12px; color: #334155; }
 QProgressBar::chunk { background: #2563eb; border-radius: 6px; }
+
+/* Semantic status colors shared by every data table. */
+QTableWidget::item[status="success"] { color: #15803d; font-weight: 800; }
+QTableWidget::item[status="warning"] { color: #b45309; font-weight: 800; }
+QTableWidget::item[status="danger"] { color: #be123c; font-weight: 800; }
 """
+
+
+def _button_variant(button):
+    """Return a consistent semantic variant without changing page business logic."""
+    name = button.objectName().lower()
+    text = button.text().strip().lower()
+    if name in {"danger", "premiumclear"} or any(word in text for word in ("hapus", "nonaktif", "restore", "batalkan")):
+        return "danger"
+    if name in {"primary", "dashboardprimary", "premiumadd", "premiumcheckout", "loginprimarybutton"}:
+        return "primary"
+    if any(word in text for word in ("simpan", "tambah", "buat", "checkout", "bayar", "cetak", "test print", "backup")):
+        return "primary"
+    if any(word in text for word in ("aktif", "aktifkan", "terapkan")):
+        return "success"
+    if any(word in text for word in ("info", "detail")):
+        return "info"
+    return "secondary"
+
+
+def _apply_status_colors(table):
+    """Color common status cells consistently across all pages."""
+    success = {"aman", "aktif", "lunas", "berhasil", "tersedia", "normal"}
+    warning = {"menipis", "peringatan", "pending", "sebagian"}
+    danger = {"habis", "nonaktif", "gagal", "kurang", "error"}
+    for row in range(table.rowCount()):
+        for col in range(table.columnCount()):
+            item = table.item(row, col)
+            if item is None:
+                continue
+            value = item.text().strip().lower()
+            if value in success:
+                item.setForeground(QBrush(QColor(WPOS_COLORS["success"])))
+                item.setData(Qt.UserRole + 10, "success")
+            elif value in warning:
+                item.setForeground(QBrush(QColor(WPOS_COLORS["warning"])))
+                item.setData(Qt.UserRole + 10, "warning")
+            elif value in danger:
+                item.setForeground(QBrush(QColor(WPOS_COLORS["danger"])))
+                item.setData(Qt.UserRole + 10, "danger")
 
 
 def apply_unified_ui(window):
@@ -129,6 +197,16 @@ def apply_unified_ui(window):
         table.verticalHeader().setVisible(False)
         table.verticalHeader().setDefaultSectionSize(32)
         table.setFocusPolicy(Qt.StrongFocus)
+        _apply_status_colors(table)
+
+    # Central semantic button coloring: every page gets the same action hierarchy.
+    for button in window.findChildren(QPushButton):
+        button.setFocusPolicy(Qt.StrongFocus)
+        variant = _button_variant(button)
+        if button.property("variant") != variant:
+            button.setProperty("variant", variant)
+            button.style().unpolish(button)
+            button.style().polish(button)
 
     # Modern shell already supplies the page title. Hide duplicated legacy
     # page headers so every page has one clear title/hint hierarchy.
@@ -138,10 +216,6 @@ def apply_unified_ui(window):
             parent.hide()
     for subtitle in window.findChildren(QLabel, "pageSubtitle"):
         subtitle.hide()
-
-    # Consistent keyboard focus behavior for actionable controls.
-    for widget in window.findChildren(QPushButton):
-        widget.setFocusPolicy(Qt.StrongFocus)
 
     # Give dialogs the same visual language while retaining their existing
     # dimensions and behavior.
