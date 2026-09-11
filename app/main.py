@@ -9,6 +9,8 @@ from .ui.user_management import UserManagementDialog
 from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
 from .ui.ux2026 import apply_ux2026
+from .ui.unified_ui import apply_unified_ui
+from .ui.dashboard_ux import apply_dashboard_ux
 from .ui.themes import apply_theme, current_theme
 
 
@@ -17,8 +19,6 @@ def main():
     app = QApplication(sys.argv)
     if LOGO_PATH.exists():
         app.setWindowIcon(QIcon(str(LOGO_PATH)))
-    # Keep the existing theme infrastructure for compatibility, but do not
-    # expose theme switching in the application menu for V1.1.5.
     apply_theme(app, current_theme())
     holder = {}
 
@@ -26,12 +26,15 @@ def main():
         apply_ui_polish(window)
         window._apply_modern_style()
         apply_ux2026(window)
+        apply_unified_ui(window)
+        apply_dashboard_ux(window)
 
     def success(user):
         def logout_callback(window):
             holder.pop("main", None)
             window.close()
             login_window = LoginWindow(success)
+            apply_unified_ui(login_window)
             holder["login"] = login_window
             login_window.show()
 
@@ -41,9 +44,6 @@ def main():
         refresh_ui(window)
         holder["main"] = window
 
-        # V1.1.5: theme switching is intentionally hidden for now.
-        # The underlying theme service remains intact to avoid unnecessary
-        # changes to the existing styling pipeline.
         if str(user.role).upper() == "ADMIN":
             menu = window.menuBar().addMenu("Administrasi")
             action = menu.addAction("Manajemen User")
@@ -52,6 +52,7 @@ def main():
         window.show()
 
     login = LoginWindow(success)
+    apply_unified_ui(login)
     holder["login"] = login
     login.show()
     sys.exit(app.exec())
