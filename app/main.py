@@ -10,6 +10,7 @@ from .ui.branding import LOGO_PATH
 from .ui.polish import apply_ui_polish
 from .ui.ux2026 import apply_ux2026
 from .ui.unified_ui import apply_unified_ui
+from .ui.dashboard_ux import apply_dashboard_ux
 from .ui.themes import apply_theme, current_theme
 
 
@@ -26,6 +27,7 @@ def main():
         window._apply_modern_style()
         apply_ux2026(window)
         apply_unified_ui(window)
+        apply_dashboard_ux(window)
 
     def success(user):
         def logout_callback(window):
