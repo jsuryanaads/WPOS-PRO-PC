@@ -14,6 +14,7 @@ from .ui.dashboard_ux import apply_dashboard_ux
 from .ui.purchase_ux import apply_purchase_ux
 from .ui.product_stock_ux import apply_product_stock_ux
 from .ui.cash_report_ux import apply_cash_report_ux
+from .ui.system_ux import apply_system_ux
 from .ui.themes import apply_theme, current_theme
 
 
@@ -34,6 +35,7 @@ def main():
         apply_purchase_ux(window)
         apply_product_stock_ux(window)
         apply_cash_report_ux(window)
+        apply_system_ux(window)
 
     def success(user):
         def logout_callback(window):
