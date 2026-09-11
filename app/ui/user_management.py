@@ -1,29 +1,26 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QAbstractItemView, QCheckBox, QComboBox, QDialog, QFormLayout,
+    QAbstractItemView, QCheckBox, QComboBox, QFormLayout,
     QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMessageBox,
-    QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout
+    QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 )
 
 from ..database import SessionLocal
 from ..services.users import ROLES, list_users, create_user, set_user_active, reset_password
 
 
-class UserManagementDialog(QDialog):
-    """Focused administration dialog with the same visual hierarchy as WPOS PRO."""
+class UserManagementPage(QWidget):
+    """Unified administration page rendered inside the main WPOS window."""
 
     def __init__(self, actor, parent=None):
         super().__init__(parent)
         self.actor = actor
         self.selected_user_id = None
-        self.setObjectName("userManagementDialog")
-        self.setWindowTitle("WPOS PRO — Manajemen User")
-        self.resize(860, 620)
-        self.setMinimumSize(760, 540)
+        self.setObjectName("userManagementPage")
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(22, 20, 22, 20)
+        root.setContentsMargins(18, 16, 18, 18)
         root.setSpacing(14)
 
         title = QLabel("Manajemen User")
@@ -227,3 +224,7 @@ class UserManagementDialog(QDialog):
         self.table.clearSelection()
         self._sync_selected_state()
         self.username.setFocus()
+
+
+# Backward-compatible name for any external imports; it is now a normal page.
+UserManagementDialog = UserManagementPage
