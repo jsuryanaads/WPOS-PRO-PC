@@ -12,6 +12,7 @@ from .ui.ux2026 import apply_ux2026
 from .ui.unified_ui import apply_unified_ui
 from .ui.dashboard_ux import apply_dashboard_ux
 from .ui.purchase_ux import apply_purchase_ux
+from .ui.product_stock_ux import apply_product_stock_ux
 from .ui.themes import apply_theme, current_theme
 
 
@@ -30,6 +31,7 @@ def main():
         apply_unified_ui(window)
         apply_dashboard_ux(window)
         apply_purchase_ux(window)
+        apply_product_stock_ux(window)
 
     def success(user):
         def logout_callback(window):
